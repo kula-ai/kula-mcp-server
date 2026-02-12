@@ -53,7 +53,7 @@ export function register(server: McpServer, client: KulaClient) {
 - Auth via `KULA_API_KEY` env var — validated at startup.
 - Import paths must include `.js` extension (ESM requirement).
 
-### API Domains → Tool Files (26 tools)
+### API Domains → Tool Files (28 tools)
 
 | Domain | File | Tools |
 |--------|------|-------|
