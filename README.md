@@ -52,7 +52,7 @@ Get your API key from [Kula Developer Settings](https://developers.kula.ai).
 
 ## Available Tools
 
-26 tools across 7 categories:
+28 tools across 7 categories:
 
 <details>
 <summary>Organization (2 tools)</summary>
