@@ -4,7 +4,6 @@
 [![npm](https://img.shields.io/npm/v/@kula/mcp-server)](https://www.npmjs.com/package/@kula/mcp-server)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node](https://img.shields.io/badge/node-%3E%3D22-brightgreen)](https://nodejs.org)
-[![Coverage](https://raw.githubusercontent.com/kula-ai/kula-mcp-server/coverage-badges/badges/coverage-total.svg)](https://github.com/kula-ai/kula-mcp-server/actions/workflows/ci.yml)
 
 An MCP (Model Context Protocol) server for the [Kula](https://www.kula.ai) recruiting API. Connect AI assistants like Claude to your Kula account to list jobs, manage applications, configure webhooks, and more.
 
@@ -52,7 +51,7 @@ Get your API key from [Kula Developer Settings](https://developers.kula.ai).
 
 ## Available Tools
 
-28 tools across 7 categories:
+26 tools across 7 categories:
 
 <details>
 <summary>Organization (2 tools)</summary>
