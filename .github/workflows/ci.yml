@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+      - run: npm run test:coverage
+      - name: Coverage report
+        if: github.event_name == 'pull_request'
+        uses: davelosert/vitest-coverage-report-action@v2
+      - name: Generate coverage badge
+        if: github.ref == 'refs/heads/main'
+        uses: jpb06/coverage-badges-action@latest
+        with:
+          branches: main
+          target-branch: coverage-badges
+          coverage-summary-path: ./coverage/coverage-summary.json
+          output-folder: ./badges
+          badges-icon: vitest

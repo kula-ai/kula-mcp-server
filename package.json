@@ -1,0 +1,57 @@
+{
+  "name": "@kula/mcp-server",
+  "version": "0.1.0",
+  "description": "MCP server for the Kula recruiting API",
+  "type": "module",
+  "bin": {
+    "kula-mcp-server": "./build/index.js"
+  },
+  "files": [
+    "build",
+    "README.md",
+    "LICENSE"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kula-ai/kula-mcp-server.git"
+  },
+  "homepage": "https://github.com/kula-ai/kula-mcp-server",
+  "bugs": {
+    "url": "https://github.com/kula-ai/kula-mcp-server/issues"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "kula",
+    "recruiting",
+    "ai",
+    "claude"
+  ],
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node build/index.js",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "prepare": "npm run build"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.26.0",
+    "zod": "^3.23"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "@vitest/coverage-istanbul": "^4.0.18",
+    "eslint": "^9.39.2",
+    "globals": "^17.3.0",
+    "typescript": "^5.5",
+    "typescript-eslint": "^8.54.0",
+    "vitest": "^4.0.18"
+  },
+  "license": "MIT"
+}
