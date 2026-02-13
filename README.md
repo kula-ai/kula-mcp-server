@@ -9,9 +9,9 @@ An MCP (Model Context Protocol) server for the [Kula](https://www.kula.ai) recru
 
 ## Quick Start
 
-### With Claude Desktop / Cursor
+### With Claude Desktop
 
-Add to your Claude Desktop configuration (`~/Library/Application Support/Claude/claude_desktop_config.json`) or Cursor MCP config (`~/.cursor/mcp.json`):
+Add to your Claude Desktop configuration (`~/Library/Application Support/Claude/claude_desktop_config.json`):
 
 ```json
 {
@@ -27,13 +27,37 @@ Add to your Claude Desktop configuration (`~/Library/Application Support/Claude/
 }
 ```
 
-### With Claude Code
+<details>
+<summary>With Cursor</summary>
+
+Add to `~/.cursor/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "kula": {
+      "command": "npx",
+      "args": ["-y", "@kula/mcp-server"],
+      "env": {
+        "KULA_API_KEY": "your_api_key_here"
+      }
+    }
+  }
+}
+```
+
+</details>
+
+<details>
+<summary>With Claude Code</summary>
 
 ```bash
 claude mcp add kula -- npx -y @kula/mcp-server
 ```
 
 Then set `KULA_API_KEY` in your environment.
+
+</details>
 
 ### Manual
 
@@ -163,9 +187,9 @@ npx @modelcontextprotocol/inspector node build/index.js
 
 To test your local build with an AI client instead of the published package:
 
-#### Claude Desktop / Cursor
+#### Claude Desktop
 
-Edit `~/Library/Application Support/Claude/claude_desktop_config.json` (or `~/.cursor/mcp.json` for Cursor):
+Edit `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
 ```json
 {
@@ -181,13 +205,37 @@ Edit `~/Library/Application Support/Claude/claude_desktop_config.json` (or `~/.c
 }
 ```
 
-#### Claude Code
+<details>
+<summary>With Cursor</summary>
+
+Edit `~/.cursor/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "kula": {
+      "command": "node",
+      "args": ["/absolute/path/to/kula-mcp/build/index.js"],
+      "env": {
+        "KULA_API_KEY": "your_api_key_here"
+      }
+    }
+  }
+}
+```
+
+</details>
+
+<details>
+<summary>With Claude Code</summary>
 
 ```bash
 claude mcp add kula -- node /absolute/path/to/kula-mcp/build/index.js
 ```
 
 Then set `KULA_API_KEY` in your environment.
+
+</details>
 
 > **Note:** The server uses STDIO transport, so there's no hot-reload. After rebuilding (`npm run build` or via `npm run dev`), restart the MCP client to pick up changes.
 
