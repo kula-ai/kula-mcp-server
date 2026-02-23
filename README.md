@@ -1,7 +1,7 @@
-# @kula/mcp-server
+# @kula-ai/mcp-server
 
 [![CI](https://github.com/kula-ai/kula-mcp-server/actions/workflows/ci.yml/badge.svg)](https://github.com/kula-ai/kula-mcp-server/actions/workflows/ci.yml)
-[![npm](https://img.shields.io/npm/v/@kula/mcp-server)](https://www.npmjs.com/package/@kula/mcp-server)
+[![npm](https://img.shields.io/npm/v/@kula-ai/mcp-server)](https://www.npmjs.com/package/@kula-ai/mcp-server)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node](https://img.shields.io/badge/node-%3E%3D22-brightgreen)](https://nodejs.org)
 
@@ -18,7 +18,7 @@ Add to your Claude Desktop configuration (`~/Library/Application Support/Claude/
   "mcpServers": {
     "kula": {
       "command": "npx",
-      "args": ["-y", "@kula/mcp-server"],
+      "args": ["-y", "@kula-ai/mcp-server"],
       "env": {
         "KULA_API_KEY": "your_api_key_here"
       }
@@ -37,7 +37,7 @@ Add to `~/.cursor/mcp.json`:
   "mcpServers": {
     "kula": {
       "command": "npx",
-      "args": ["-y", "@kula/mcp-server"],
+      "args": ["-y", "@kula-ai/mcp-server"],
       "env": {
         "KULA_API_KEY": "your_api_key_here"
       }
@@ -52,7 +52,7 @@ Add to `~/.cursor/mcp.json`:
 <summary>With Claude Code</summary>
 
 ```bash
-claude mcp add kula -- npx -y @kula/mcp-server
+claude mcp add kula -- npx -y @kula-ai/mcp-server
 ```
 
 Then set `KULA_API_KEY` in your environment.
@@ -62,7 +62,7 @@ Then set `KULA_API_KEY` in your environment.
 ### Manual
 
 ```bash
-npx @kula/mcp-server
+npx @kula-ai/mcp-server
 ```
 
 ## Configuration
