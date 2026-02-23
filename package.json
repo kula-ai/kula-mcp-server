@@ -1,5 +1,5 @@
 {
-  "name": "@kula/mcp-server",
+  "name": "@kula-ai/mcp-server",
   "version": "0.1.0",
   "description": "MCP server for the Kula recruiting API",
   "type": "module",
@@ -53,5 +53,9 @@
     "typescript-eslint": "^8.54.0",
     "vitest": "^4.0.18"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
 }
