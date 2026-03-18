@@ -75,7 +75,7 @@ Get your API key from [Kula Developer Settings](https://developers.kula.ai).
 
 ## Available Tools
 
-26 tools across 7 categories:
+32 tools across 8 categories:
 
 <details>
 <summary>Organization (2 tools)</summary>
@@ -144,6 +144,20 @@ Get your API key from [Kula Developer Settings](https://developers.kula.ai).
 | `rotate_webhook_secret` | Rotate the signing secret for a webhook |
 | `list_webhook_events` | List all available webhook event types you can subscribe to |
 | `get_webhook_sample_payload` | Get a sample webhook payload for a specific event type |
+
+</details>
+
+<details>
+<summary>Requisitions (6 tools)</summary>
+
+| Tool | Description |
+|------|-------------|
+| `list_requisitions` | List all requisitions for your account |
+| `get_requisition` | Get detailed information about a specific requisition |
+| `list_requisition_fields` | List default and custom field definitions for requisitions |
+| `create_requisition` | Create a new requisition (supports linked groups via head_count) |
+| `update_requisition` | Update an existing requisition |
+| `close_requisition` | Close a requisition |
 
 </details>
 
