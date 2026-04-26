@@ -62,6 +62,12 @@ describe("interviews tools", () => {
       const result = await client.callTool({ name: "list_interviews", arguments: {} });
       expect(result.isError).toBe(true);
     });
+
+    it("handles non-Error throws", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockRejectedValueOnce("fail");
+      const result = await client.callTool({ name: "list_interviews", arguments: {} });
+      expect(result.isError).toBe(true);
+    });
   });
 
   describe("get_interview", () => {
@@ -82,6 +88,12 @@ describe("interviews tools", () => {
 
     it("returns isError true on failure", async () => {
       (mockKula.get as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("fail"));
+      const result = await client.callTool({ name: "get_interview", arguments: { id: "x" } });
+      expect(result.isError).toBe(true);
+    });
+
+    it("handles non-Error throws", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockRejectedValueOnce("fail");
       const result = await client.callTool({ name: "get_interview", arguments: { id: "x" } });
       expect(result.isError).toBe(true);
     });
@@ -142,6 +154,29 @@ describe("interviews tools", () => {
       const call = (mockKula.post as ReturnType<typeof vi.fn>).mock.calls.at(-1);
       expect(call[1].scorecard_required).toBe(true);
       expect(call[1].note_taker_enabled).toBe(false);
+    });
+
+    it("sends name, timezone, location, kind in create_interview", async () => {
+      (mockKula.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ id: "int-5" });
+
+      await client.callTool({
+        name: "create_interview",
+        arguments: {
+          application_id: "5",
+          start_time: "2024-07-01T10:00:00Z",
+          end_time: "2024-07-01T11:00:00Z",
+          name: "Culture Fit",
+          timezone: "America/Los_Angeles",
+          location: "Zoom",
+          kind: "video",
+        },
+      });
+
+      const call = (mockKula.post as ReturnType<typeof vi.fn>).mock.calls.at(-1);
+      expect(call[1].name).toBe("Culture Fit");
+      expect(call[1].timezone).toBe("America/Los_Angeles");
+      expect(call[1].location).toBe("Zoom");
+      expect(call[1].kind).toBe("video");
     });
 
     it("sends candidate_description, interviewer_description, calendar_visibility, scorecard_feedback_description, scorecard_rating_description", async () => {
