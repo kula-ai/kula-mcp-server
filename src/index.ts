@@ -11,6 +11,11 @@ import { register as registerWebhooks } from "./tools/webhooks.js";
 import { register as registerAutocomplete } from "./tools/autocomplete.js";
 import { register as registerOrganization } from "./tools/organization.js";
 import { register as registerRequisitions } from "./tools/requisitions.js";
+import { register as registerSources } from "./tools/sources.js";
+import { register as registerRejectionReasons } from "./tools/rejection-reasons.js";
+import { register as registerCustomFields } from "./tools/custom-fields.js";
+import { register as registerInterviews } from "./tools/interviews.js";
+import { register as registerScorecardSubmissions } from "./tools/scorecard-submissions.js";
 
 const apiKey = process.env.KULA_API_KEY;
 if (!apiKey) {
@@ -37,6 +42,11 @@ registerWebhooks(server, client);
 registerAutocomplete(server, client);
 registerOrganization(server, client);
 registerRequisitions(server, client);
+registerSources(server, client);
+registerRejectionReasons(server, client);
+registerCustomFields(server, client);
+registerInterviews(server, client);
+registerScorecardSubmissions(server, client);
 
 // Start the server with STDIO transport
 const transport = new StdioServerTransport();

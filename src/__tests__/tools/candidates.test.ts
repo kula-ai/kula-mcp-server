@@ -76,12 +76,12 @@ describe("candidates tools", () => {
           skills: "skill1,skill2",
           job_id: "1",
           job_stage_id: "2",
-          ats_candidate_source_id: "3",
+          source_id: "3",
           credited_to_user_id: "4",
           social_urls: [
             { kind: "linkedin", url: "https://linkedin.com/in/test" },
           ],
-          location: { places_city_id: "city-1" },
+          location: { places_city_id: "123" },
           additional_info: { custom: "value" },
         },
       });
@@ -95,12 +95,12 @@ describe("candidates tools", () => {
         skills: "skill1,skill2",
         job_id: 1,
         job_stage_id: 2,
-        ats_candidate_source_id: 3,
+        source_id: 3,
         credited_to_user_id: 4,
         social_urls: [
           { kind: "linkedin", url: "https://linkedin.com/in/test" },
         ],
-        location: { places_city_id: "city-1" },
+        location: { places_city_id: 123 },
         additional_info: { custom: "value" },
       });
     });
@@ -116,7 +116,7 @@ describe("candidates tools", () => {
           first_name: "Test",
           job_id: "10",
           job_stage_id: "20",
-          ats_candidate_source_id: "30",
+          source_id: "30",
           credited_to_user_id: "40",
         },
       });
@@ -125,7 +125,7 @@ describe("candidates tools", () => {
         first_name: "Test",
         job_id: 10,
         job_stage_id: 20,
-        ats_candidate_source_id: 30,
+        source_id: 30,
         credited_to_user_id: 40,
       });
     });
@@ -148,6 +148,10 @@ describe("candidates tools", () => {
         email: "jane@example.com",
         sort_by: undefined,
         sort_order: undefined,
+        created_after: undefined,
+        created_before: undefined,
+        updated_after: undefined,
+        updated_before: undefined,
       });
       expect(result.isError).toBeFalsy();
     });
@@ -182,6 +186,104 @@ describe("candidates tools", () => {
       const text = (result.content as Array<{ type: string; text: string }>)[0]
         .text;
       expect(JSON.parse(text).first_name).toBe("Jane");
+    });
+  });
+
+  describe("search_candidates", () => {
+    it("passes query to search endpoint", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: [] });
+
+      const result = await client.callTool({
+        name: "search_candidates",
+        arguments: { query: "jane", page: "1", limit: "10" },
+      });
+
+      expect(mockKula.get).toHaveBeenCalledWith("/v1/candidates/search", {
+        query: "jane",
+        page: "1",
+        limit: "10",
+      });
+      expect(result.isError).toBeFalsy();
+    });
+
+    it("works without query (optional)", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: [] });
+
+      const result = await client.callTool({ name: "search_candidates", arguments: {} });
+      expect(result.isError).toBeFalsy();
+    });
+
+    it("returns isError true on failure", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("fail"));
+      const result = await client.callTool({ name: "search_candidates", arguments: { query: "x" } });
+      expect(result.isError).toBe(true);
+    });
+  });
+
+  describe("update_candidate", () => {
+    it("patches correct endpoint with optional fields", async () => {
+      (mockKula.patch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ id: "cand-5" });
+
+      const result = await client.callTool({
+        name: "update_candidate",
+        arguments: { id: "cand-5", first_name: "Updated", title: "Engineer", source_id: "8" },
+      });
+
+      expect(mockKula.patch).toHaveBeenCalledWith("/v1/candidates/cand-5", expect.objectContaining({
+        first_name: "Updated",
+        title: "Engineer",
+        source_id: 8,
+      }));
+      expect(result.isError).toBeFalsy();
+    });
+
+    it("converts location sub-fields to integers", async () => {
+      (mockKula.patch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ id: "cand-6" });
+
+      await client.callTool({
+        name: "update_candidate",
+        arguments: {
+          id: "cand-6",
+          location: { places_city_id: "55", places_country_id: "101" },
+        },
+      });
+
+      const call = (mockKula.patch as ReturnType<typeof vi.fn>).mock.calls.at(-1);
+      expect(call[1].location).toEqual({ places_city_id: 55, places_country_id: 101 });
+    });
+
+    it("returns isError true on failure", async () => {
+      (mockKula.patch as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("fail"));
+      const result = await client.callTool({ name: "update_candidate", arguments: { id: "x" } });
+      expect(result.isError).toBe(true);
+    });
+  });
+
+  describe("upload_candidate_file", () => {
+    it("posts to correct endpoint with kind", async () => {
+      (mockKula.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ id: "file-1" });
+
+      const result = await client.callTool({
+        name: "upload_candidate_file",
+        arguments: { id: "cand-7", kind: "resume" },
+      });
+
+      expect(mockKula.post).toHaveBeenCalledWith("/v1/candidates/cand-7/files", { kind: "resume" });
+      expect(result.isError).toBeFalsy();
+    });
+
+    it("posts without kind when omitted", async () => {
+      (mockKula.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ id: "file-2" });
+
+      await client.callTool({ name: "upload_candidate_file", arguments: { id: "cand-8" } });
+
+      expect(mockKula.post).toHaveBeenCalledWith("/v1/candidates/cand-8/files", {});
+    });
+
+    it("returns isError true on failure", async () => {
+      (mockKula.post as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("fail"));
+      const result = await client.callTool({ name: "upload_candidate_file", arguments: { id: "x" } });
+      expect(result.isError).toBe(true);
     });
   });
 

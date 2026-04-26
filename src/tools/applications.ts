@@ -11,25 +11,25 @@ export function register(server: McpServer, client: KulaClient) {
         page: z.string().optional().describe("Page number"),
         limit: z.string().optional().describe("Items per page"),
         job_id: z.string().optional().describe("Filter by job ID"),
-        status: z.string().optional().describe("Filter by application status"),
+        status: z.string().optional().describe("Comma-separated application statuses to filter by (active, hired, rejected, duplicate)"),
         stage_ids: z.string().optional().describe("Comma-separated stage IDs to filter by"),
         credited_to_user_ids: z.string().optional().describe("Comma-separated user IDs to filter by credited user"),
         sort_by: z.string().optional().describe("Field to sort by"),
         sort_order: z.string().optional().describe("Sort order: asc or desc"),
+        created_after: z.string().optional().describe("Filter by created date (ISO 8601, inclusive lower bound)"),
+        created_before: z.string().optional().describe("Filter by created date (ISO 8601, inclusive upper bound)"),
+        updated_after: z.string().optional().describe("Filter by updated date (ISO 8601, inclusive lower bound)"),
+        updated_before: z.string().optional().describe("Filter by updated date (ISO 8601, inclusive upper bound)"),
       },
     },
-    async ({ page, limit, job_id, status, stage_ids, credited_to_user_ids, sort_by, sort_order }) => {
+    async ({ page, limit, job_id, status, stage_ids, credited_to_user_ids, sort_by, sort_order, created_after, created_before, updated_after, updated_before }) => {
       try {
-        const data = await client.get("/v1/applications", {
-          page,
-          limit,
-          job_id,
-          status,
-          stage_ids,
-          credited_to_user_ids,
-          sort_by,
-          sort_order,
-        });
+        const params: Record<string, string | number | string[] | number[] | undefined> = { page, limit, sort_by, sort_order, created_after, created_before, updated_after, updated_before };
+        if (job_id !== undefined) params.job_id = Number(job_id);
+        if (status !== undefined) params.status = status.split(",").map((s) => s.trim());
+        if (stage_ids !== undefined) params.stage_ids = stage_ids.split(",").map((s) => Number(s.trim()));
+        if (credited_to_user_ids !== undefined) params.credited_to_user_ids = credited_to_user_ids.split(",").map((s) => Number(s.trim()));
+        const data = await client.get("/v1/applications", params);
         return {
           content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
         };
@@ -82,13 +82,14 @@ export function register(server: McpServer, client: KulaClient) {
       inputSchema: {
         id: z.string().describe("Application ID"),
         stage_id: z.string().describe("Target stage ID"),
+        requisition_code: z.string().optional().describe("Requisition code to associate with this stage move"),
       },
     },
-    async ({ id, stage_id }) => {
+    async ({ id, stage_id, requisition_code }) => {
       try {
-        const data = await client.post(`/v1/applications/${id}/update-stage`, {
-          stage_id: Number(stage_id),
-        });
+        const body: Record<string, unknown> = { stage_id: Number(stage_id) };
+        if (requisition_code !== undefined) body.requisition_code = requisition_code;
+        const data = await client.post(`/v1/applications/${id}/update-stage`, body);
         return {
           content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
         };

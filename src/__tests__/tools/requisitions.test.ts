@@ -21,7 +21,7 @@ describe("requisitions tools", () => {
   });
 
   describe("list_requisitions", () => {
-    it("calls correct endpoint", async () => {
+    it("calls correct endpoint with no params", async () => {
       (mockKula.get as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
         data: [{ id: "req-1" }],
       });
@@ -31,8 +31,59 @@ describe("requisitions tools", () => {
         arguments: {},
       });
 
-      expect(mockKula.get).toHaveBeenCalledWith("/v1/requisitions");
+      expect(mockKula.get).toHaveBeenCalledWith("/v1/requisitions", expect.any(Object));
       expect(result.isError).toBeFalsy();
+    });
+
+    it("splits and converts array filter params", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: [] });
+
+      await client.callTool({
+        name: "list_requisitions",
+        arguments: {
+          status: "open,filled",
+          department_ids: "1,2",
+          office_ids: "10",
+          job_ids: "5,6",
+        },
+      });
+
+      const call = (mockKula.get as ReturnType<typeof vi.fn>).mock.calls.at(-1);
+      expect(call[0]).toBe("/v1/requisitions");
+      expect(call[1].status).toEqual(["open", "filled"]);
+      expect(call[1].department_ids).toEqual([1, 2]);
+      expect(call[1].office_ids).toEqual([10]);
+      expect(call[1].job_ids).toEqual([5, 6]);
+    });
+
+    it("passes scalar filter params", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: [] });
+
+      await client.callTool({
+        name: "list_requisitions",
+        arguments: {
+          q: "engineer",
+          sort_by: "opened_at",
+          sort_order: "desc",
+          created_after: "2024-01-01T00:00:00Z",
+          updated_after: "2024-06-01T00:00:00Z",
+          target_hire_date_after: "2024-09-01",
+        },
+      });
+
+      const call = (mockKula.get as ReturnType<typeof vi.fn>).mock.calls.at(-1);
+      expect(call[1].q).toBe("engineer");
+      expect(call[1].sort_by).toBe("opened_at");
+      expect(call[1].sort_order).toBe("desc");
+      expect(call[1].created_after).toBe("2024-01-01T00:00:00Z");
+      expect(call[1].updated_after).toBe("2024-06-01T00:00:00Z");
+      expect(call[1].target_hire_date_after).toBe("2024-09-01");
+    });
+
+    it("returns isError true on failure", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("fail"));
+      const result = await client.callTool({ name: "list_requisitions", arguments: {} });
+      expect(result.isError).toBe(true);
     });
   });
 

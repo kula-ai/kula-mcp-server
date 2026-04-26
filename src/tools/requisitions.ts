@@ -8,11 +8,44 @@ export function register(server: McpServer, client: KulaClient) {
     {
       description:
         "List all requisitions for your account, respecting permissions.",
-      inputSchema: {},
+      inputSchema: {
+        page: z.string().optional().describe("Page number"),
+        limit: z.string().optional().describe("Items per page"),
+        status: z.string().optional().describe("Comma-separated statuses to filter by (draft, pending_approval, approved, rejected, created, open, filled, closed, archived)"),
+        department_ids: z.string().optional().describe("Comma-separated department IDs to filter by"),
+        employment_type: z.string().optional().describe("Comma-separated employment types to filter by (full_time, part_time, contract, internship, temporary, seasonal)"),
+        requisition_type: z.string().optional().describe("Comma-separated requisition types to filter by (new_hire, contract, backfill, internship, internal)"),
+        recruiter_ids: z.string().optional().describe("Comma-separated recruiter user IDs to filter by"),
+        hiring_manager_ids: z.string().optional().describe("Comma-separated hiring manager user IDs to filter by"),
+        office_ids: z.string().optional().describe("Comma-separated office IDs to filter by"),
+        job_ids: z.string().optional().describe("Comma-separated job IDs to filter by"),
+        created_by_ids: z.string().optional().describe("Comma-separated user IDs to filter by creator"),
+        q: z.string().optional().describe("Full-text search query"),
+        sort_by: z.string().optional().describe("Field to sort by (created_at, updated_at, opened_at, target_hire_date)"),
+        sort_order: z.string().optional().describe("Sort order: asc or desc"),
+        created_after: z.string().optional().describe("Filter by created date (ISO 8601, inclusive lower bound)"),
+        created_before: z.string().optional().describe("Filter by created date (ISO 8601, inclusive upper bound)"),
+        updated_after: z.string().optional().describe("Filter by updated date (ISO 8601, inclusive lower bound)"),
+        updated_before: z.string().optional().describe("Filter by updated date (ISO 8601, inclusive upper bound)"),
+        target_hire_date_after: z.string().optional().describe("Filter by target hire date lower bound (YYYY-MM-DD)"),
+        target_hire_date_before: z.string().optional().describe("Filter by target hire date upper bound (YYYY-MM-DD)"),
+        target_start_date_after: z.string().optional().describe("Filter by target start date lower bound (YYYY-MM-DD)"),
+        target_start_date_before: z.string().optional().describe("Filter by target start date upper bound (YYYY-MM-DD)"),
+      },
     },
-    async () => {
+    async ({ page, limit, status, department_ids, employment_type, requisition_type, recruiter_ids, hiring_manager_ids, office_ids, job_ids, created_by_ids, q, sort_by, sort_order, created_after, created_before, updated_after, updated_before, target_hire_date_after, target_hire_date_before, target_start_date_after, target_start_date_before }) => {
       try {
-        const data = await client.get("/v1/requisitions");
+        const params: Record<string, string | string[] | number[] | undefined> = { page, limit, q, sort_by, sort_order, created_after, created_before, updated_after, updated_before, target_hire_date_after, target_hire_date_before, target_start_date_after, target_start_date_before };
+        if (status !== undefined) params.status = status.split(",").map((s) => s.trim());
+        if (department_ids !== undefined) params.department_ids = department_ids.split(",").map((s) => Number(s.trim()));
+        if (employment_type !== undefined) params.employment_type = employment_type.split(",").map((s) => s.trim());
+        if (requisition_type !== undefined) params.requisition_type = requisition_type.split(",").map((s) => s.trim());
+        if (recruiter_ids !== undefined) params.recruiter_ids = recruiter_ids.split(",").map((s) => Number(s.trim()));
+        if (hiring_manager_ids !== undefined) params.hiring_manager_ids = hiring_manager_ids.split(",").map((s) => Number(s.trim()));
+        if (office_ids !== undefined) params.office_ids = office_ids.split(",").map((s) => Number(s.trim()));
+        if (job_ids !== undefined) params.job_ids = job_ids.split(",").map((s) => Number(s.trim()));
+        if (created_by_ids !== undefined) params.created_by_ids = created_by_ids.split(",").map((s) => Number(s.trim()));
+        const data = await client.get("/v1/requisitions", params);
         return {
           content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
         };

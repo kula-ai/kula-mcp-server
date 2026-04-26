@@ -28,18 +28,20 @@ describe("applications tools", () => {
 
       const result = await client.callTool({
         name: "list_applications",
-        arguments: { page: "1", limit: "10", job_id: "jp-1", status: "submitted" },
+        arguments: { page: "1", limit: "10", job_id: "5", status: "submitted" },
       });
 
       expect(mockKula.get).toHaveBeenCalledWith("/v1/applications", {
         page: "1",
         limit: "10",
-        job_id: "jp-1",
-        status: "submitted",
-        stage_ids: undefined,
-        credited_to_user_ids: undefined,
+        job_id: 5,
+        status: ["submitted"],
         sort_by: undefined,
         sort_order: undefined,
+        created_after: undefined,
+        created_before: undefined,
+        updated_after: undefined,
+        updated_before: undefined,
       });
       expect(result.isError).toBeFalsy();
     });
