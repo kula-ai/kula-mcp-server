@@ -83,11 +83,17 @@ describe("rejection-reasons tools", () => {
       expect(result.isError).toBeFalsy();
     });
 
-    it("returns isError true on failure", async () => {
+    it("returns isError true on Error failure", async () => {
       (mockKula.get as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
         new Error("Kula API error 500: Internal Server Error")
       );
 
+      const result = await client.callTool({ name: "list_rejection_reasons", arguments: {} });
+      expect(result.isError).toBe(true);
+    });
+
+    it("handles non-Error throws", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockRejectedValueOnce("fail");
       const result = await client.callTool({ name: "list_rejection_reasons", arguments: {} });
       expect(result.isError).toBe(true);
     });

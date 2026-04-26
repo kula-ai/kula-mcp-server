@@ -56,6 +56,28 @@ describe("requisitions tools", () => {
       expect(call[1].job_ids).toEqual([5, 6]);
     });
 
+    it("splits employment_type, requisition_type, recruiter_ids, hiring_manager_ids, created_by_ids", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: [] });
+
+      await client.callTool({
+        name: "list_requisitions",
+        arguments: {
+          employment_type: "full_time,contract",
+          requisition_type: "new_hire,backfill",
+          recruiter_ids: "1,2",
+          hiring_manager_ids: "3,4",
+          created_by_ids: "5",
+        },
+      });
+
+      const call = (mockKula.get as ReturnType<typeof vi.fn>).mock.calls.at(-1);
+      expect(call[1].employment_type).toEqual(["full_time", "contract"]);
+      expect(call[1].requisition_type).toEqual(["new_hire", "backfill"]);
+      expect(call[1].recruiter_ids).toEqual([1, 2]);
+      expect(call[1].hiring_manager_ids).toEqual([3, 4]);
+      expect(call[1].created_by_ids).toEqual([5]);
+    });
+
     it("passes scalar filter params", async () => {
       (mockKula.get as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: [] });
 

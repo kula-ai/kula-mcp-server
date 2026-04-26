@@ -72,7 +72,7 @@ describe("scorecard-submissions tools", () => {
       expect(call[1].status).toEqual(["submitted", "pending"]);
     });
 
-    it("returns isError true on failure", async () => {
+    it("returns isError true on Error failure", async () => {
       (mockKula.get as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
         new Error("Kula API error 404: Not Found")
       );
@@ -85,6 +85,15 @@ describe("scorecard-submissions tools", () => {
       expect(result.isError).toBe(true);
       const text = (result.content as Array<{ type: string; text: string }>)[0].text;
       expect(text).toContain("404");
+    });
+
+    it("handles non-Error throws", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockRejectedValueOnce("fail");
+      const result = await client.callTool({
+        name: "list_scorecard_submissions",
+        arguments: { application_id: "1" },
+      });
+      expect(result.isError).toBe(true);
     });
   });
 });

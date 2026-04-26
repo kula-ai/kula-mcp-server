@@ -95,7 +95,7 @@ describe("sources tools", () => {
       expect(result.isError).toBeFalsy();
     });
 
-    it("returns isError true on failure", async () => {
+    it("returns isError true on Error failure", async () => {
       (mockKula.get as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
         new Error("Kula API error 500: Internal Server Error")
       );
@@ -104,6 +104,12 @@ describe("sources tools", () => {
       expect(result.isError).toBe(true);
       const text = (result.content as Array<{ type: string; text: string }>)[0].text;
       expect(text).toContain("500");
+    });
+
+    it("handles non-Error throws", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockRejectedValueOnce("fail");
+      const result = await client.callTool({ name: "list_sources", arguments: {} });
+      expect(result.isError).toBe(true);
     });
   });
 });

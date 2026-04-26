@@ -45,6 +45,19 @@ describe("applications tools", () => {
       });
       expect(result.isError).toBeFalsy();
     });
+
+    it("splits stage_ids and credited_to_user_ids into integer arrays", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: [] });
+
+      await client.callTool({
+        name: "list_applications",
+        arguments: { stage_ids: "1,2,3", credited_to_user_ids: "10,20" },
+      });
+
+      const call = (mockKula.get as ReturnType<typeof vi.fn>).mock.calls.at(-1);
+      expect(call[1].stage_ids).toEqual([1, 2, 3]);
+      expect(call[1].credited_to_user_ids).toEqual([10, 20]);
+    });
   });
 
   describe("get_application", () => {
@@ -84,6 +97,20 @@ describe("applications tools", () => {
         { stage_id: 5 }
       );
       expect(result.isError).toBeFalsy();
+    });
+
+    it("includes requisition_code when provided", async () => {
+      (mockKula.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ id: "app-1" });
+
+      await client.callTool({
+        name: "update_application_stage",
+        arguments: { id: "app-1", stage_id: "5", requisition_code: "REQ-42" },
+      });
+
+      expect(mockKula.post).toHaveBeenCalledWith(
+        "/v1/applications/app-1/update-stage",
+        { stage_id: 5, requisition_code: "REQ-42" }
+      );
     });
   });
 

@@ -81,7 +81,7 @@ describe("candidates tools", () => {
           social_urls: [
             { kind: "linkedin", url: "https://linkedin.com/in/test" },
           ],
-          location: { places_city_id: "123" },
+          location: { places_city_id: "123", places_state_id: "456", places_country_id: "789" },
           additional_info: { custom: "value" },
         },
       });
@@ -100,7 +100,7 @@ describe("candidates tools", () => {
         social_urls: [
           { kind: "linkedin", url: "https://linkedin.com/in/test" },
         ],
-        location: { places_city_id: 123 },
+        location: { places_city_id: 123, places_state_id: 456, places_country_id: 789 },
         additional_info: { custom: "value" },
       });
     });
@@ -218,6 +218,12 @@ describe("candidates tools", () => {
       const result = await client.callTool({ name: "search_candidates", arguments: { query: "x" } });
       expect(result.isError).toBe(true);
     });
+
+    it("handles non-Error throws", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockRejectedValueOnce("fail");
+      const result = await client.callTool({ name: "search_candidates", arguments: {} });
+      expect(result.isError).toBe(true);
+    });
   });
 
   describe("update_candidate", () => {
@@ -237,23 +243,81 @@ describe("candidates tools", () => {
       expect(result.isError).toBeFalsy();
     });
 
-    it("converts location sub-fields to integers", async () => {
+    it("sends last_name, email, phone_number, tags, and additional_info when provided", async () => {
+      (mockKula.patch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ id: "cand-9" });
+
+      await client.callTool({
+        name: "update_candidate",
+        arguments: {
+          id: "cand-9",
+          last_name: "Smith",
+          email: "smith@example.com",
+          phone_number: "+9876543210",
+          tags: "vip,sourced",
+          additional_info: { custom_field: "value" },
+        },
+      });
+
+      const call = (mockKula.patch as ReturnType<typeof vi.fn>).mock.calls.at(-1);
+      expect(call[1].last_name).toBe("Smith");
+      expect(call[1].email).toBe("smith@example.com");
+      expect(call[1].phone_number).toBe("+9876543210");
+      expect(call[1].tags).toBe("vip,sourced");
+      expect(call[1].additional_info).toEqual({ custom_field: "value" });
+    });
+
+    it("converts all location sub-fields to integers", async () => {
       (mockKula.patch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ id: "cand-6" });
 
       await client.callTool({
         name: "update_candidate",
         arguments: {
           id: "cand-6",
-          location: { places_city_id: "55", places_country_id: "101" },
+          location: { places_city_id: "55", places_state_id: "66", places_country_id: "101" },
         },
       });
 
       const call = (mockKula.patch as ReturnType<typeof vi.fn>).mock.calls.at(-1);
-      expect(call[1].location).toEqual({ places_city_id: 55, places_country_id: 101 });
+      expect(call[1].location).toEqual({ places_city_id: 55, places_state_id: 66, places_country_id: 101 });
+    });
+
+    it("sends skills and social_urls when provided", async () => {
+      (mockKula.patch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ id: "cand-7" });
+
+      await client.callTool({
+        name: "update_candidate",
+        arguments: {
+          id: "cand-7",
+          skills: "TypeScript,React",
+          social_urls: [{ kind: "linkedin", url: "https://linkedin.com/in/test" }],
+        },
+      });
+
+      const call = (mockKula.patch as ReturnType<typeof vi.fn>).mock.calls.at(-1);
+      expect(call[1].skills).toBe("TypeScript,React");
+      expect(call[1].social_urls).toEqual([{ kind: "linkedin", url: "https://linkedin.com/in/test" }]);
+    });
+
+    it("handles partial location (city only) covering false branches for state and country", async () => {
+      (mockKula.patch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ id: "cand-8" });
+
+      await client.callTool({
+        name: "update_candidate",
+        arguments: { id: "cand-8", location: { places_city_id: "10" } },
+      });
+
+      const call = (mockKula.patch as ReturnType<typeof vi.fn>).mock.calls.at(-1);
+      expect(call[1].location).toEqual({ places_city_id: 10 });
     });
 
     it("returns isError true on failure", async () => {
       (mockKula.patch as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("fail"));
+      const result = await client.callTool({ name: "update_candidate", arguments: { id: "x" } });
+      expect(result.isError).toBe(true);
+    });
+
+    it("handles non-Error throws", async () => {
+      (mockKula.patch as ReturnType<typeof vi.fn>).mockRejectedValueOnce("fail");
       const result = await client.callTool({ name: "update_candidate", arguments: { id: "x" } });
       expect(result.isError).toBe(true);
     });
@@ -282,6 +346,12 @@ describe("candidates tools", () => {
 
     it("returns isError true on failure", async () => {
       (mockKula.post as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("fail"));
+      const result = await client.callTool({ name: "upload_candidate_file", arguments: { id: "x" } });
+      expect(result.isError).toBe(true);
+    });
+
+    it("handles non-Error throws", async () => {
+      (mockKula.post as ReturnType<typeof vi.fn>).mockRejectedValueOnce("fail");
       const result = await client.callTool({ name: "upload_candidate_file", arguments: { id: "x" } });
       expect(result.isError).toBe(true);
     });
