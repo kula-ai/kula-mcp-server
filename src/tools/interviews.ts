@@ -85,7 +85,7 @@ export function register(server: McpServer, client: KulaClient) {
           .describe("Comma-separated user IDs of interviewers"),
         name: z.string().optional().describe("Interview name"),
         timezone: z.string().optional().describe("Timezone for the interview (e.g. America/New_York)"),
-        location: z.string().optional().describe("Interview location (e.g. zoom, google_meet, in_person)"),
+        location: z.string().optional().describe("Interview location (e.g. onsite, phone_interview, zoom, google_meet, teams, hackerrank)"),
         kind: z.string().optional().describe("Interview kind: one_on_one or panel"),
         scorecard_required: z.string().optional().describe("Whether scorecard submission is required: true or false"),
         candidate_description: z.string().optional().describe("Description shown to the candidate"),

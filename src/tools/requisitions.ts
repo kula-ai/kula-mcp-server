@@ -137,24 +137,48 @@ export function register(server: McpServer, client: KulaClient) {
       description:
         "Create a new requisition. When head_count exceeds 1, creates a group of linked requisitions. Use list_requisition_fields to get available custom field IDs for additional_info.",
       inputSchema: {
-        head_count: z
-          .number()
-          .optional()
-          .describe(
-            "Number of positions. Set greater than 1 to generate multiple linked requisitions"
-          ),
+        role_name: z.string().describe("Job role name for this requisition"),
+        employment_type: z.string().describe("Employment type (full_time, part_time, contract, internship, temporary, seasonal)"),
+        requisition_type: z.string().describe("Requisition type (new_hire, contract, backfill, internship, internal)"),
+        department_id: z.string().describe("Department ID"),
+        office_ids: z.string().describe("Comma-separated office IDs (at least one required)"),
+        description: z.string().optional().describe("Requisition description"),
+        minimum_salary: z.number().optional().describe("Minimum salary amount"),
+        maximum_salary: z.number().optional().describe("Maximum salary amount"),
+        salary_currency_id: z.string().optional().describe("Currency country ID for salary"),
+        recruiter_id: z.string().optional().describe("User ID of the assigned recruiter"),
+        hiring_manager_id: z.string().optional().describe("User ID of the hiring manager"),
+        target_hire_date: z.string().optional().describe("Target hire date (YYYY-MM-DD)"),
+        target_start_date: z.string().optional().describe("Target start date (YYYY-MM-DD, must be on or after target_hire_date)"),
+        head_count: z.number().optional().describe("Number of positions (1–50). Set greater than 1 to generate multiple linked requisitions"),
+        confidential: z.boolean().optional().describe("Whether this requisition is confidential"),
+        job_id: z.string().optional().describe("Job ID to associate with this requisition"),
         additional_info: z
           .record(z.unknown())
           .optional()
-          .describe(
-            "Custom fields as key-value pairs (field ID to value). Use list_requisition_fields to get field IDs."
-          ),
+          .describe("Custom fields as key-value pairs (field ID to value). Use list_requisition_fields to get field IDs."),
       },
     },
-    async ({ head_count, additional_info }) => {
+    async ({ role_name, employment_type, requisition_type, department_id, office_ids, description, minimum_salary, maximum_salary, salary_currency_id, recruiter_id, hiring_manager_id, target_hire_date, target_start_date, head_count, confidential, job_id, additional_info }) => {
       try {
-        const body: Record<string, unknown> = {};
+        const body: Record<string, unknown> = {
+          role_name,
+          employment_type,
+          requisition_type,
+          department_id: Number(department_id),
+          office_ids: office_ids.split(",").map((s) => Number(s.trim())),
+        };
+        if (description !== undefined) body.description = description;
+        if (minimum_salary !== undefined) body.minimum_salary = minimum_salary;
+        if (maximum_salary !== undefined) body.maximum_salary = maximum_salary;
+        if (salary_currency_id !== undefined) body.salary_currency_id = Number(salary_currency_id);
+        if (recruiter_id !== undefined) body.recruiter_id = Number(recruiter_id);
+        if (hiring_manager_id !== undefined) body.hiring_manager_id = Number(hiring_manager_id);
+        if (target_hire_date !== undefined) body.target_hire_date = target_hire_date;
+        if (target_start_date !== undefined) body.target_start_date = target_start_date;
         if (head_count !== undefined) body.head_count = head_count;
+        if (confidential !== undefined) body.confidential = confidential;
+        if (job_id !== undefined) body.job_id = Number(job_id);
         if (additional_info !== undefined) body.additional_info = additional_info;
         const data = await client.post("/v1/requisitions", body);
         return {
@@ -181,39 +205,57 @@ export function register(server: McpServer, client: KulaClient) {
         "Update an existing requisition. Cannot modify requisitions with closed, archived, or filled statuses. Pass all custom field values in additional_info — omitted fields will be cleared.",
       inputSchema: {
         id: z.string().describe("Requisition ID"),
+        role_name: z.string().optional().describe("Job role name for this requisition"),
+        employment_type: z.string().optional().describe("Employment type (full_time, part_time, contract, internship, temporary, seasonal)"),
+        requisition_type: z.string().optional().describe("Requisition type (new_hire, contract, backfill, internship, internal)"),
+        department_id: z.string().optional().describe("Department ID"),
+        office_ids: z.string().optional().describe("Comma-separated office IDs (at least one required)"),
+        description: z.string().optional().describe("Requisition description"),
+        minimum_salary: z.number().optional().describe("Minimum salary amount"),
+        maximum_salary: z.number().optional().describe("Maximum salary amount"),
+        salary_currency_id: z.string().optional().describe("Currency country ID for salary"),
+        recruiter_id: z.string().optional().describe("User ID of the assigned recruiter"),
+        hiring_manager_id: z.string().optional().describe("User ID of the hiring manager"),
+        target_hire_date: z.string().optional().describe("Target hire date (YYYY-MM-DD)"),
+        target_start_date: z.string().optional().describe("Target start date (YYYY-MM-DD, must be on or after target_hire_date)"),
+        confidential: z.boolean().optional().describe("Whether this requisition is confidential"),
+        job_id: z.string().nullable().optional().describe("Associate a job or change the associated job. Set to null to remove association."),
         additional_info: z
           .record(z.unknown())
           .optional()
-          .describe(
-            "Custom field values as key-value pairs. Pass all values — omitted fields will be cleared."
-          ),
+          .describe("Custom field values as key-value pairs. Pass all values — omitted fields will be cleared."),
         apply_to_group: z
           .boolean()
           .optional()
-          .describe(
-            "When true, updates all requisitions in the group. Defaults to false (requisition leaves the group)."
-          ),
+          .describe("When true, updates all requisitions in the group. Defaults to false (requisition leaves the group)."),
         reapproval_note: z
           .string()
           .optional()
           .describe("Note included if approval workflows trigger reapproval"),
-        job_id: z
-          .string()
-          .nullable()
-          .optional()
-          .describe(
-            "Associate a job or change the associated job. Set to null to remove association."
-          ),
       },
     },
-    async ({ id, additional_info, apply_to_group, reapproval_note, job_id }) => {
+    async ({ id, role_name, employment_type, requisition_type, department_id, office_ids, description, minimum_salary, maximum_salary, salary_currency_id, recruiter_id, hiring_manager_id, target_hire_date, target_start_date, confidential, job_id, additional_info, apply_to_group, reapproval_note }) => {
       try {
         const body: Record<string, unknown> = {};
+        if (role_name !== undefined) body.role_name = role_name;
+        if (employment_type !== undefined) body.employment_type = employment_type;
+        if (requisition_type !== undefined) body.requisition_type = requisition_type;
+        if (department_id !== undefined) body.department_id = Number(department_id);
+        if (office_ids !== undefined) body.office_ids = office_ids.split(",").map((s) => Number(s.trim()));
+        if (description !== undefined) body.description = description;
+        if (minimum_salary !== undefined) body.minimum_salary = minimum_salary;
+        if (maximum_salary !== undefined) body.maximum_salary = maximum_salary;
+        if (salary_currency_id !== undefined) body.salary_currency_id = Number(salary_currency_id);
+        if (recruiter_id !== undefined) body.recruiter_id = Number(recruiter_id);
+        if (hiring_manager_id !== undefined) body.hiring_manager_id = Number(hiring_manager_id);
+        if (target_hire_date !== undefined) body.target_hire_date = target_hire_date;
+        if (target_start_date !== undefined) body.target_start_date = target_start_date;
+        if (confidential !== undefined) body.confidential = confidential;
+        if (job_id !== undefined) body.job_id = job_id;
         if (additional_info !== undefined) body.additional_info = additional_info;
         if (apply_to_group !== undefined) body.apply_to_group = apply_to_group;
         if (reapproval_note !== undefined) body.reapproval_note = reapproval_note;
-        if (job_id !== undefined) body.job_id = job_id;
-        const data = await client.put(`/v1/requisitions/${id}`, body);
+        const data = await client.patch(`/v1/requisitions/${id}`, body);
         return {
           content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
         };
@@ -238,6 +280,7 @@ export function register(server: McpServer, client: KulaClient) {
         "Close a requisition. Only requisitions in a closeable state can be closed.",
       inputSchema: {
         id: z.string().describe("Requisition ID"),
+        reason: z.string().describe("Reason for closing the requisition (required, max 255 characters)"),
         apply_to_group: z
           .boolean()
           .optional()
@@ -246,9 +289,9 @@ export function register(server: McpServer, client: KulaClient) {
           ),
       },
     },
-    async ({ id, apply_to_group }) => {
+    async ({ id, reason, apply_to_group }) => {
       try {
-        const body: Record<string, unknown> = {};
+        const body: Record<string, unknown> = { reason };
         if (apply_to_group !== undefined) body.apply_to_group = apply_to_group;
         const data = await client.post(`/v1/requisitions/${id}/close`, body);
         return {
