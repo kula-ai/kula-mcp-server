@@ -198,7 +198,7 @@ describe("candidates tools", () => {
         arguments: { query: "jane", page: "1", limit: "10" },
       });
 
-      expect(mockKula.get).toHaveBeenCalledWith("/v1/candidates/search", {
+      expect(mockKula.get).toHaveBeenCalledWith("/v1/candidates", {
         query: "jane",
         page: "1",
         limit: "10",

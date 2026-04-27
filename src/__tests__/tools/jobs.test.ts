@@ -101,7 +101,7 @@ describe("jobs tools", () => {
       });
 
       const call = (mockKula.get as ReturnType<typeof vi.fn>).mock.calls.at(-1);
-      expect(call[0]).toBe("/v1/jobs/search");
+      expect(call[0]).toBe("/v1/jobs");
       expect(call[1].query).toBe("engineer");
       expect(call[1].status).toEqual(["published"]);
       expect(call[1].department_ids).toEqual([1, 2]);
