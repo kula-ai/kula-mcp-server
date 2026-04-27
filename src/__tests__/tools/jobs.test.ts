@@ -133,6 +133,113 @@ describe("jobs tools", () => {
     });
   });
 
+  describe("create_job", () => {
+    it("posts name and converts typed fields", async () => {
+      (mockKula.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ id: "job-new" });
+
+      const result = await client.callTool({
+        name: "create_job",
+        arguments: {
+          name: "Senior Engineer",
+          department_id: "3",
+          office_ids: "10,11",
+          confidential: "true",
+          requisition_codes: "REQ-1,REQ-2",
+        },
+      });
+
+      expect(mockKula.post).toHaveBeenCalledWith("/v1/jobs", expect.objectContaining({
+        name: "Senior Engineer",
+        department_id: 3,
+        office_ids: [10, 11],
+        confidential: true,
+        requisition_codes: ["REQ-1", "REQ-2"],
+      }));
+      expect(result.isError).toBeFalsy();
+    });
+
+    it("includes compensation when provided", async () => {
+      (mockKula.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ id: "job-new" });
+
+      await client.callTool({
+        name: "create_job",
+        arguments: {
+          name: "Engineer",
+          compensation: { currency_country_id: "101", min_amount: 50000, max_amount: 80000, interval: "yearly" },
+        },
+      });
+
+      const call = (mockKula.post as ReturnType<typeof vi.fn>).mock.calls.at(-1);
+      expect(call[1].compensation).toMatchObject({
+        currency_country_id: 101,
+        min_amount: 50000,
+        max_amount: 80000,
+        interval: "yearly",
+      });
+    });
+
+    it("returns isError true on failure", async () => {
+      (mockKula.post as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("fail"));
+      const result = await client.callTool({ name: "create_job", arguments: { name: "x" } });
+      expect(result.isError).toBe(true);
+    });
+
+    it("handles non-Error throws", async () => {
+      (mockKula.post as ReturnType<typeof vi.fn>).mockRejectedValueOnce("fail");
+      const result = await client.callTool({ name: "create_job", arguments: { name: "x" } });
+      expect(result.isError).toBe(true);
+    });
+  });
+
+  describe("update_job", () => {
+    it("patches correct endpoint with optional fields", async () => {
+      (mockKula.patch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ id: "job-5" });
+
+      const result = await client.callTool({
+        name: "update_job",
+        arguments: { id: "job-5", name: "Updated Title", confidential: "false" },
+      });
+
+      expect(mockKula.patch).toHaveBeenCalledWith("/v1/jobs/job-5", expect.objectContaining({
+        name: "Updated Title",
+        confidential: false,
+      }));
+      expect(result.isError).toBeFalsy();
+    });
+
+    it("includes compensation when provided", async () => {
+      (mockKula.patch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ id: "job-5" });
+
+      await client.callTool({
+        name: "update_job",
+        arguments: {
+          id: "job-5",
+          compensation: { currency_country_id: "101", min_amount: 60000, max_amount: 90000, interval: "yearly" },
+        },
+      });
+
+      const call = (mockKula.patch as ReturnType<typeof vi.fn>).mock.calls.at(-1);
+      expect(call[1].compensation).toMatchObject({
+        currency_country_id: 101,
+        min_amount: 60000,
+        max_amount: 90000,
+        interval: "yearly",
+      });
+    });
+
+    it("returns isError true on failure", async () => {
+      (mockKula.patch as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("fail"));
+      const result = await client.callTool({ name: "update_job", arguments: { id: "x" } });
+      expect(result.isError).toBe(true);
+    });
+
+    it("handles non-Error throws", async () => {
+      (mockKula.patch as ReturnType<typeof vi.fn>).mockRejectedValueOnce("fail");
+      const result = await client.callTool({ name: "update_job", arguments: { id: "x" } });
+      expect(result.isError).toBe(true);
+    });
+  });
+
   describe("error handling", () => {
     it("returns isError true when client throws", async () => {
       (mockKula.get as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
