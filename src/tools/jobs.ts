@@ -64,7 +64,7 @@ export function register(server: McpServer, client: KulaClient) {
         if (department_ids !== undefined) params.department_ids = department_ids.split(",").map((s) => Number(s.trim()));
         if (office_ids !== undefined) params.office_ids = office_ids.split(",").map((s) => Number(s.trim()));
         if (status !== undefined) params.status = status.split(",").map((s) => s.trim());
-        const data = await client.get("/v1/jobs/search", params);
+        const data = await client.get("/v1/jobs", params);
         return {
           content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
         };

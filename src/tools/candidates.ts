@@ -150,7 +150,7 @@ export function register(server: McpServer, client: KulaClient) {
     },
     async ({ query, page, limit }) => {
       try {
-        const data = await client.get("/v1/candidates/search", { query, page, limit });
+        const data = await client.get("/v1/candidates", { query, page, limit });
         return {
           content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
         };
