@@ -106,4 +106,101 @@ export function register(server: McpServer, client: KulaClient) {
       }
     }
   );
+
+  server.registerTool(
+    "list_application_notes",
+    {
+      description: "List notes on a specific application.",
+      inputSchema: {
+        application_id: z.string().describe("Application ID"),
+        page: z.string().optional().describe("Page number"),
+        limit: z.string().optional().describe("Items per page"),
+      },
+    },
+    async ({ application_id, page, limit }) => {
+      try {
+        const data = await client.get(`/v1/applications/${application_id}/notes`, { page, limit });
+        return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+      } catch (error) {
+        return {
+          content: [{ type: "text", text: `Error: ${error instanceof Error ? error.message : String(error)}` }],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  server.registerTool(
+    "create_application_note",
+    {
+      description: "Add a note to a specific application.",
+      inputSchema: {
+        application_id: z.string().describe("Application ID"),
+        body: z.string().describe("Note content"),
+        notify_recruiter: z.string().optional().describe("Whether to notify the recruiter: true or false"),
+      },
+    },
+    async ({ application_id, body, notify_recruiter }) => {
+      try {
+        const payload: Record<string, unknown> = { body };
+        if (notify_recruiter !== undefined) payload.notify_recruiter = notify_recruiter === "true";
+        const data = await client.post(`/v1/applications/${application_id}/notes`, payload);
+        return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+      } catch (error) {
+        return {
+          content: [{ type: "text", text: `Error: ${error instanceof Error ? error.message : String(error)}` }],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  server.registerTool(
+    "update_application_note",
+    {
+      description: "Update an existing note on an application.",
+      inputSchema: {
+        application_id: z.string().describe("Application ID"),
+        id: z.string().describe("Note ID"),
+        body: z.string().optional().describe("Updated note content"),
+        notify_recruiter: z.string().optional().describe("Whether to notify the recruiter: true or false"),
+      },
+    },
+    async ({ application_id, id, body, notify_recruiter }) => {
+      try {
+        const payload: Record<string, unknown> = {};
+        if (body !== undefined) payload.body = body;
+        if (notify_recruiter !== undefined) payload.notify_recruiter = notify_recruiter === "true";
+        const data = await client.patch(`/v1/applications/${application_id}/notes/${id}`, payload);
+        return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+      } catch (error) {
+        return {
+          content: [{ type: "text", text: `Error: ${error instanceof Error ? error.message : String(error)}` }],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  server.registerTool(
+    "delete_application_note",
+    {
+      description: "Delete a note from an application.",
+      inputSchema: {
+        application_id: z.string().describe("Application ID"),
+        id: z.string().describe("Note ID"),
+      },
+    },
+    async ({ application_id, id }) => {
+      try {
+        await client.delete(`/v1/applications/${application_id}/notes/${id}`);
+        return { content: [{ type: "text", text: "Note deleted successfully." }] };
+      } catch (error) {
+        return {
+          content: [{ type: "text", text: `Error: ${error instanceof Error ? error.message : String(error)}` }],
+          isError: true,
+        };
+      }
+    }
+  );
 }

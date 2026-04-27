@@ -114,6 +114,47 @@ describe("applications tools", () => {
     });
   });
 
+  describe("list_application_notes", () => {
+    it("calls correct endpoint with application_id", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: [] });
+      await client.callTool({ name: "list_application_notes", arguments: { application_id: "5", page: "1" } });
+      expect(mockKula.get).toHaveBeenCalledWith("/v1/applications/5/notes", { page: "1", limit: undefined });
+    });
+  });
+
+  describe("create_application_note", () => {
+    it("posts note body to correct endpoint", async () => {
+      (mockKula.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ id: "n-1" });
+      await client.callTool({ name: "create_application_note", arguments: { application_id: "5", body: "Great candidate" } });
+      expect(mockKula.post).toHaveBeenCalledWith("/v1/applications/5/notes", { body: "Great candidate" });
+    });
+
+    it("converts notify_recruiter string to boolean", async () => {
+      (mockKula.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ id: "n-1" });
+      await client.callTool({ name: "create_application_note", arguments: { application_id: "5", body: "Note", notify_recruiter: "true" } });
+      const call = (mockKula.post as ReturnType<typeof vi.fn>).mock.calls.at(-1);
+      expect(call[1].notify_recruiter).toBe(true);
+    });
+  });
+
+  describe("update_application_note", () => {
+    it("patches note body to correct endpoint", async () => {
+      (mockKula.patch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ id: "n-1" });
+      await client.callTool({ name: "update_application_note", arguments: { application_id: "5", id: "n-1", body: "Updated" } });
+      expect(mockKula.patch).toHaveBeenCalledWith("/v1/applications/5/notes/n-1", { body: "Updated" });
+    });
+  });
+
+  describe("delete_application_note", () => {
+    it("calls delete on correct endpoint", async () => {
+      (mockKula.delete as ReturnType<typeof vi.fn>).mockResolvedValueOnce(undefined);
+      const result = await client.callTool({ name: "delete_application_note", arguments: { application_id: "5", id: "n-1" } });
+      expect(mockKula.delete).toHaveBeenCalledWith("/v1/applications/5/notes/n-1");
+      const text = (result.content as Array<{ type: string; text: string }>)[0].text;
+      expect(text).toContain("deleted successfully");
+    });
+  });
+
   describe("error handling", () => {
     it("returns isError true when client throws", async () => {
       (mockKula.get as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
