@@ -89,7 +89,7 @@ export function register(server: McpServer, client: KulaClient) {
       try {
         const body: Record<string, unknown> = { stage_id: Number(stage_id) };
         if (requisition_code !== undefined) body.requisition_code = requisition_code;
-        const data = await client.post(`/v1/applications/${id}/update-stage`, body);
+        const data = await client.patch(`/v1/applications/${id}/stage`, body);
         return {
           content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
         };

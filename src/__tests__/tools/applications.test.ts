@@ -81,8 +81,8 @@ describe("applications tools", () => {
   });
 
   describe("update_application_stage", () => {
-    it("posts stage_id as number to correct endpoint", async () => {
-      (mockKula.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+    it("patches stage_id as number to correct endpoint", async () => {
+      (mockKula.patch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
         id: "app-1",
         stage_id: 5,
       });
@@ -92,23 +92,23 @@ describe("applications tools", () => {
         arguments: { id: "app-1", stage_id: "5" },
       });
 
-      expect(mockKula.post).toHaveBeenCalledWith(
-        "/v1/applications/app-1/update-stage",
+      expect(mockKula.patch).toHaveBeenCalledWith(
+        "/v1/applications/app-1/stage",
         { stage_id: 5 }
       );
       expect(result.isError).toBeFalsy();
     });
 
     it("includes requisition_code when provided", async () => {
-      (mockKula.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ id: "app-1" });
+      (mockKula.patch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ id: "app-1" });
 
       await client.callTool({
         name: "update_application_stage",
         arguments: { id: "app-1", stage_id: "5", requisition_code: "REQ-42" },
       });
 
-      expect(mockKula.post).toHaveBeenCalledWith(
-        "/v1/applications/app-1/update-stage",
+      expect(mockKula.patch).toHaveBeenCalledWith(
+        "/v1/applications/app-1/stage",
         { stage_id: 5, requisition_code: "REQ-42" }
       );
     });
@@ -150,13 +150,13 @@ describe("applications tools", () => {
     });
 
     it("handles Error in update_application_stage", async () => {
-      (mockKula.post as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("fail"));
+      (mockKula.patch as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("fail"));
       const result = await client.callTool({ name: "update_application_stage", arguments: { id: "x", stage_id: "1" } });
       expect(result.isError).toBe(true);
     });
 
     it("handles non-Error throws in update_application_stage", async () => {
-      (mockKula.post as ReturnType<typeof vi.fn>).mockRejectedValueOnce("fail");
+      (mockKula.patch as ReturnType<typeof vi.fn>).mockRejectedValueOnce("fail");
       const result = await client.callTool({ name: "update_application_stage", arguments: { id: "x", stage_id: "1" } });
       expect(result.isError).toBe(true);
     });
