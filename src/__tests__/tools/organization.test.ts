@@ -58,6 +58,46 @@ describe("organization tools", () => {
     });
   });
 
+  describe("list_users", () => {
+    it("calls users endpoint with no params", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        data: [{ id: "u1", name: "Jane Smith", email: "jane@example.com", role: "recruiter" }],
+      });
+
+      const result = await client.callTool({ name: "list_users", arguments: {} });
+
+      expect(mockKula.get).toHaveBeenCalledWith("/v1/users", expect.any(Object));
+      expect(result.isError).toBeFalsy();
+    });
+
+    it("passes filter params", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: [] });
+
+      await client.callTool({
+        name: "list_users",
+        arguments: { sort_by: "name", sort_order: "asc", updated_after: "2024-01-01T00:00:00Z" },
+      });
+
+      const call = (mockKula.get as ReturnType<typeof vi.fn>).mock.calls.at(-1);
+      expect(call[0]).toBe("/v1/users");
+      expect(call[1].sort_by).toBe("name");
+      expect(call[1].sort_order).toBe("asc");
+      expect(call[1].updated_after).toBe("2024-01-01T00:00:00Z");
+    });
+
+    it("returns isError true on failure", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("fail"));
+      const result = await client.callTool({ name: "list_users", arguments: {} });
+      expect(result.isError).toBe(true);
+    });
+
+    it("handles non-Error throws", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockRejectedValueOnce("fail");
+      const result = await client.callTool({ name: "list_users", arguments: {} });
+      expect(result.isError).toBe(true);
+    });
+  });
+
   describe("error handling", () => {
     it("returns isError true when client throws", async () => {
       (mockKula.get as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
