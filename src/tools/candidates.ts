@@ -95,8 +95,9 @@ export function register(server: McpServer, client: KulaClient) {
   server.registerTool(
     "list_candidates",
     {
-      description: "List candidates. Only use when the user explicitly asks about candidates.",
+      description: "List and search candidates — supports keyword search via `query`, plus filters (email, date ranges). Only use when the user explicitly asks about candidates.",
       inputSchema: {
+        query: z.string().optional().describe("Search query to find candidates by name or keyword"),
         page: z.string().optional().describe("Page number"),
         limit: z.string().optional().describe("Items per page"),
         email: z.string().optional().describe("Filter by email address"),
@@ -108,9 +109,10 @@ export function register(server: McpServer, client: KulaClient) {
         updated_before: z.string().optional().describe("Filter by updated date (ISO 8601, inclusive upper bound)"),
       },
     },
-    async ({ page, limit, email, sort_by, sort_order, created_after, created_before, updated_after, updated_before }) => {
+    async ({ query, page, limit, email, sort_by, sort_order, created_after, created_before, updated_after, updated_before }) => {
       try {
         const data = await client.get("/v1/candidates", {
+          query,
           page,
           limit,
           email,
@@ -121,36 +123,6 @@ export function register(server: McpServer, client: KulaClient) {
           updated_after,
           updated_before,
         });
-        return {
-          content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
-        };
-      } catch (error) {
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Error: ${error instanceof Error ? error.message : String(error)}`,
-            },
-          ],
-          isError: true,
-        };
-      }
-    }
-  );
-
-  server.registerTool(
-    "search_candidates",
-    {
-      description: "Full-text search for candidates by keyword.",
-      inputSchema: {
-        query: z.string().optional().describe("Search query string"),
-        page: z.string().optional().describe("Page number"),
-        limit: z.string().optional().describe("Items per page"),
-      },
-    },
-    async ({ query, page, limit }) => {
-      try {
-        const data = await client.get("/v1/candidates", { query, page, limit });
         return {
           content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
         };

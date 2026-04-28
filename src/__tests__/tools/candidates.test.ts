@@ -143,6 +143,7 @@ describe("candidates tools", () => {
       });
 
       expect(mockKula.get).toHaveBeenCalledWith("/v1/candidates", {
+        query: undefined,
         page: "1",
         limit: "10",
         email: "jane@example.com",
@@ -167,6 +168,15 @@ describe("candidates tools", () => {
       });
       expect(result.isError).toBeFalsy();
     });
+
+    it("passes query param for keyword search", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: [] });
+
+      await client.callTool({ name: "list_candidates", arguments: { query: "jane" } });
+
+      const call = (mockKula.get as ReturnType<typeof vi.fn>).mock.calls.at(-1);
+      expect(call[1].query).toBe("jane");
+    });
   });
 
   describe("get_candidate", () => {
@@ -186,43 +196,6 @@ describe("candidates tools", () => {
       const text = (result.content as Array<{ type: string; text: string }>)[0]
         .text;
       expect(JSON.parse(text).first_name).toBe("Jane");
-    });
-  });
-
-  describe("search_candidates", () => {
-    it("passes query to search endpoint", async () => {
-      (mockKula.get as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: [] });
-
-      const result = await client.callTool({
-        name: "search_candidates",
-        arguments: { query: "jane", page: "1", limit: "10" },
-      });
-
-      expect(mockKula.get).toHaveBeenCalledWith("/v1/candidates", {
-        query: "jane",
-        page: "1",
-        limit: "10",
-      });
-      expect(result.isError).toBeFalsy();
-    });
-
-    it("works without query (optional)", async () => {
-      (mockKula.get as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: [] });
-
-      const result = await client.callTool({ name: "search_candidates", arguments: {} });
-      expect(result.isError).toBeFalsy();
-    });
-
-    it("returns isError true on failure", async () => {
-      (mockKula.get as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("fail"));
-      const result = await client.callTool({ name: "search_candidates", arguments: { query: "x" } });
-      expect(result.isError).toBe(true);
-    });
-
-    it("handles non-Error throws", async () => {
-      (mockKula.get as ReturnType<typeof vi.fn>).mockRejectedValueOnce("fail");
-      const result = await client.callTool({ name: "search_candidates", arguments: {} });
-      expect(result.isError).toBe(true);
     });
   });
 

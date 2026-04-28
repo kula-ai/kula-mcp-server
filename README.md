@@ -75,15 +75,44 @@ Get your API key from [Kula Developer Settings](https://developers.kula.ai).
 
 ## Available Tools
 
-32 tools across 8 categories:
+52 tools across 13 categories:
 
 <details>
-<summary>Organization (2 tools)</summary>
+<summary>Organization (4 tools)</summary>
 
 | Tool | Description |
 |------|-------------|
 | `list_departments` | List all departments in the organization as a nested tree structure |
 | `list_offices` | List all offices in the organization |
+| `list_milestones` | List all hiring milestones (pipeline stage groupings) |
+| `list_users` | List all active internal users (recruiters, hiring managers, coordinators) |
+
+</details>
+
+<details>
+<summary>Sources (1 tool)</summary>
+
+| Tool | Description |
+|------|-------------|
+| `list_sources` | List all candidate sources in the organization |
+
+</details>
+
+<details>
+<summary>Rejection Reasons (1 tool)</summary>
+
+| Tool | Description |
+|------|-------------|
+| `list_rejection_reasons` | List all rejection reasons configured in the organization |
+
+</details>
+
+<details>
+<summary>Custom Fields (1 tool)</summary>
+
+| Tool | Description |
+|------|-------------|
+| `list_custom_fields` | List custom fields, optionally filtered by subject type (candidate, application, job) |
 
 </details>
 
@@ -92,8 +121,19 @@ Get your API key from [Kula Developer Settings](https://developers.kula.ai).
 
 | Tool | Description |
 |------|-------------|
-| `list_jobs` | List jobs |
+| `list_jobs` | List and search jobs — supports keyword search via `query`, plus filters |
 | `get_job` | Get details of a specific job |
+
+</details>
+
+<details>
+<summary>Job Stages (3 tools)</summary>
+
+| Tool | Description |
+|------|-------------|
+| `list_job_stages` | List all pipeline stages for a specific job |
+| `create_job_stage` | Create a new pipeline stage for a job |
+| `list_stage_activities` | List all activities configured for a specific job stage |
 
 </details>
 
@@ -108,29 +148,44 @@ Get your API key from [Kula Developer Settings](https://developers.kula.ai).
 </details>
 
 <details>
-<summary>Candidates (3 tools)</summary>
+<summary>Candidates (5 tools)</summary>
 
 | Tool | Description |
 |------|-------------|
 | `create_candidate` | Create a new candidate in the system |
-| `list_candidates` | List candidates |
+| `list_candidates` | List and search candidates — supports keyword search via `query`, plus filters |
 | `get_candidate` | Get details of a specific candidate |
+| `update_candidate` | Update an existing candidate's profile |
+| `upload_candidate_file` | Attach a file (resume, cover letter, or other) to a candidate |
 
 </details>
 
 <details>
-<summary>Applications (3 tools)</summary>
+<summary>Applications (7 tools)</summary>
 
 | Tool | Description |
 |------|-------------|
 | `list_applications` | List job applications |
 | `get_application` | Get details of a specific application |
 | `update_application_stage` | Update the stage of a specific application |
+| `list_application_notes` | List notes on a specific application |
+| `create_application_note` | Add a note to a specific application |
+| `update_application_note` | Update an existing note on an application |
+| `delete_application_note` | Delete a note from an application |
 
 </details>
 
 <details>
-<summary>Webhooks (10 tools)</summary>
+<summary>Scorecard Submissions (1 tool)</summary>
+
+| Tool | Description |
+|------|-------------|
+| `list_scorecard_submissions` | List scorecard submissions for a specific application |
+
+</details>
+
+<details>
+<summary>Webhooks (13 tools)</summary>
 
 | Tool | Description |
 |------|-------------|
@@ -142,7 +197,10 @@ Get your API key from [Kula Developer Settings](https://developers.kula.ai).
 | `enable_webhook` | Enable a disabled webhook |
 | `disable_webhook` | Disable an active webhook |
 | `rotate_webhook_secret` | Rotate the signing secret for a webhook |
-| `list_webhook_events` | List all available webhook event types you can subscribe to |
+| `test_webhook` | Send a test payload to a webhook endpoint |
+| `get_webhook_test_status` | Get the delivery status of a webhook test |
+| `list_webhook_logs` | List recent delivery logs for a webhook |
+| `list_webhook_events` | List all available webhook event types |
 | `get_webhook_sample_payload` | Get a sample webhook payload for a specific event type |
 
 </details>

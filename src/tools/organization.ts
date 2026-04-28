@@ -58,7 +58,7 @@ export function register(server: McpServer, client: KulaClient) {
   server.registerTool(
     "list_milestones",
     {
-      description: "List all hiring milestones (pipeline stages groupings) in the organization.",
+      description: "List all hiring milestones (pipeline stage groupings) in the organization.",
       inputSchema: {
         page: z.string().optional().describe("Page number"),
         limit: z.string().optional().describe("Items per page"),
