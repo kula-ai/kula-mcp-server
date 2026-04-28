@@ -33,7 +33,7 @@ describe("autocomplete tools", () => {
 
       expect(mockKula.get).toHaveBeenCalledWith(
         "/v1/autocomplete/companies",
-        { query: "acme" }
+        { q: "acme" }
       );
 
       const text = (result.content as Array<{ type: string; text: string }>)[0]
@@ -73,7 +73,7 @@ describe("autocomplete tools", () => {
 
       expect(mockKula.get).toHaveBeenCalledWith(
         "/v1/autocomplete/locations",
-        { query: "san fran" }
+        { q: "san fran" }
       );
 
       const text = (result.content as Array<{ type: string; text: string }>)[0]
@@ -95,7 +95,7 @@ describe("autocomplete tools", () => {
 
       expect(mockKula.get).toHaveBeenCalledWith(
         "/v1/autocomplete/institutions",
-        { query: "mit" }
+        { q: "mit" }
       );
 
       const text = (result.content as Array<{ type: string; text: string }>)[0]
@@ -117,7 +117,7 @@ describe("autocomplete tools", () => {
 
       expect(mockKula.get).toHaveBeenCalledWith(
         "/v1/autocomplete/disciplines",
-        { query: "comp" }
+        { q: "comp" }
       );
 
       const text = (result.content as Array<{ type: string; text: string }>)[0]

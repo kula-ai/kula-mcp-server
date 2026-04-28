@@ -14,7 +14,7 @@ export function register(server: McpServer, client: KulaClient) {
     async ({ query }) => {
       try {
         const data = await client.get("/v1/autocomplete/companies", {
-          query,
+          q: query,
         });
         return {
           content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
@@ -70,7 +70,7 @@ export function register(server: McpServer, client: KulaClient) {
     async ({ query }) => {
       try {
         const data = await client.get("/v1/autocomplete/locations", {
-          query,
+          q: query,
         });
         return {
           content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
@@ -100,7 +100,7 @@ export function register(server: McpServer, client: KulaClient) {
     async ({ query }) => {
       try {
         const data = await client.get("/v1/autocomplete/institutions", {
-          query,
+          q: query,
         });
         return {
           content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
@@ -130,7 +130,7 @@ export function register(server: McpServer, client: KulaClient) {
     async ({ query }) => {
       try {
         const data = await client.get("/v1/autocomplete/disciplines", {
-          query,
+          q: query,
         });
         return {
           content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
