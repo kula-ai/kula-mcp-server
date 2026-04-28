@@ -91,8 +91,8 @@ describe("candidates tools", () => {
         last_name: "Test",
         email: "full@example.com",
         phone_number: "+1234567890",
-        tags: ["tag1", "tag2"],
-        skills: ["skill1", "skill2"],
+        tags: "tag1,tag2",
+        skills: "skill1,skill2",
         job_id: 1,
         job_stage_id: 2,
         source_id: 3,
@@ -235,7 +235,7 @@ describe("candidates tools", () => {
       expect(call[1].last_name).toBe("Smith");
       expect(call[1].email).toBe("smith@example.com");
       expect(call[1].phone_number).toBe("+9876543210");
-      expect(call[1].tags).toEqual(["vip", "sourced"]);
+      expect(call[1].tags).toBe("vip,sourced");
       expect(call[1].additional_info).toEqual({ custom_field: "value" });
     });
 
@@ -267,7 +267,7 @@ describe("candidates tools", () => {
       });
 
       const call = (mockKula.patch as ReturnType<typeof vi.fn>).mock.calls.at(-1);
-      expect(call[1].skills).toEqual(["TypeScript", "React"]);
+      expect(call[1].skills).toBe("TypeScript,React");
       expect(call[1].social_urls).toEqual([{ kind: "linkedin", url: "https://linkedin.com/in/test" }]);
     });
 
