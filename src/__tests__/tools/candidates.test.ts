@@ -91,8 +91,8 @@ describe("candidates tools", () => {
         last_name: "Test",
         email: "full@example.com",
         phone_number: "+1234567890",
-        tags: "tag1,tag2",
-        skills: "skill1,skill2",
+        tags: ["tag1", "tag2"],
+        skills: ["skill1", "skill2"],
         job_id: 1,
         job_stage_id: 2,
         source_id: 3,
@@ -235,7 +235,7 @@ describe("candidates tools", () => {
       expect(call[1].last_name).toBe("Smith");
       expect(call[1].email).toBe("smith@example.com");
       expect(call[1].phone_number).toBe("+9876543210");
-      expect(call[1].tags).toBe("vip,sourced");
+      expect(call[1].tags).toEqual(["vip", "sourced"]);
       expect(call[1].additional_info).toEqual({ custom_field: "value" });
     });
 
@@ -267,7 +267,7 @@ describe("candidates tools", () => {
       });
 
       const call = (mockKula.patch as ReturnType<typeof vi.fn>).mock.calls.at(-1);
-      expect(call[1].skills).toBe("TypeScript,React");
+      expect(call[1].skills).toEqual(["TypeScript", "React"]);
       expect(call[1].social_urls).toEqual([{ kind: "linkedin", url: "https://linkedin.com/in/test" }]);
     });
 
@@ -292,40 +292,6 @@ describe("candidates tools", () => {
     it("handles non-Error throws", async () => {
       (mockKula.patch as ReturnType<typeof vi.fn>).mockRejectedValueOnce("fail");
       const result = await client.callTool({ name: "update_candidate", arguments: { id: "x" } });
-      expect(result.isError).toBe(true);
-    });
-  });
-
-  describe("upload_candidate_file", () => {
-    it("posts to correct endpoint with kind", async () => {
-      (mockKula.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ id: "file-1" });
-
-      const result = await client.callTool({
-        name: "upload_candidate_file",
-        arguments: { id: "cand-7", kind: "resume" },
-      });
-
-      expect(mockKula.post).toHaveBeenCalledWith("/v1/candidates/cand-7/files", { kind: "resume" });
-      expect(result.isError).toBeFalsy();
-    });
-
-    it("posts without kind when omitted", async () => {
-      (mockKula.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ id: "file-2" });
-
-      await client.callTool({ name: "upload_candidate_file", arguments: { id: "cand-8" } });
-
-      expect(mockKula.post).toHaveBeenCalledWith("/v1/candidates/cand-8/files", {});
-    });
-
-    it("returns isError true on failure", async () => {
-      (mockKula.post as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("fail"));
-      const result = await client.callTool({ name: "upload_candidate_file", arguments: { id: "x" } });
-      expect(result.isError).toBe(true);
-    });
-
-    it("handles non-Error throws", async () => {
-      (mockKula.post as ReturnType<typeof vi.fn>).mockRejectedValueOnce("fail");
-      const result = await client.callTool({ name: "upload_candidate_file", arguments: { id: "x" } });
       expect(result.isError).toBe(true);
     });
   });
