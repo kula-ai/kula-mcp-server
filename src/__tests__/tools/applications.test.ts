@@ -201,5 +201,29 @@ describe("applications tools", () => {
       const result = await client.callTool({ name: "update_application_stage", arguments: { id: "x", stage_id: "1" } });
       expect(result.isError).toBe(true);
     });
+
+    it("handles errors in list_application_notes", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("fail"));
+      const result = await client.callTool({ name: "list_application_notes", arguments: { application_id: "5" } });
+      expect(result.isError).toBe(true);
+    });
+
+    it("handles errors in create_application_note", async () => {
+      (mockKula.post as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("fail"));
+      const result = await client.callTool({ name: "create_application_note", arguments: { application_id: "5", body: "Note" } });
+      expect(result.isError).toBe(true);
+    });
+
+    it("handles errors in update_application_note", async () => {
+      (mockKula.patch as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("fail"));
+      const result = await client.callTool({ name: "update_application_note", arguments: { application_id: "5", id: "n-1", body: "Updated" } });
+      expect(result.isError).toBe(true);
+    });
+
+    it("handles errors in delete_application_note", async () => {
+      (mockKula.delete as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("fail"));
+      const result = await client.callTool({ name: "delete_application_note", arguments: { application_id: "5", id: "n-1" } });
+      expect(result.isError).toBe(true);
+    });
   });
 });
