@@ -15,7 +15,7 @@ export function register(server: McpServer, client: KulaClient) {
         stage_ids: z.string().optional().describe("Comma-separated stage IDs to filter by"),
         credited_to_user_ids: z.string().optional().describe("Comma-separated user IDs to filter by credited user"),
         sort_by: z.string().optional().describe("Field to sort by"),
-        sort_order: z.string().optional().describe("Sort order: asc or desc"),
+        sort_order: z.enum(["asc", "desc"]).optional().describe("Sort direction"),
         created_after: z.string().optional().describe("Filter by created date (ISO 8601, inclusive lower bound)"),
         created_before: z.string().optional().describe("Filter by created date (ISO 8601, inclusive upper bound)"),
         updated_after: z.string().optional().describe("Filter by updated date (ISO 8601, inclusive lower bound)"),

@@ -20,9 +20,9 @@ export function register(server: McpServer, client: KulaClient) {
         office_ids: z.string().optional().describe("Comma-separated office IDs to filter by"),
         job_ids: z.string().optional().describe("Comma-separated job IDs to filter by"),
         created_by_ids: z.string().optional().describe("Comma-separated user IDs to filter by creator"),
-        q: z.string().optional().describe("Full-text search query"),
+        query: z.string().optional().describe("Full-text search query"),
         sort_by: z.string().optional().describe("Field to sort by (created_at, updated_at, opened_at, target_hire_date)"),
-        sort_order: z.string().optional().describe("Sort order: asc or desc"),
+        sort_order: z.enum(["asc", "desc"]).optional().describe("Sort direction"),
         created_after: z.string().optional().describe("Filter by created date (ISO 8601, inclusive lower bound)"),
         created_before: z.string().optional().describe("Filter by created date (ISO 8601, inclusive upper bound)"),
         updated_after: z.string().optional().describe("Filter by updated date (ISO 8601, inclusive lower bound)"),
@@ -33,9 +33,9 @@ export function register(server: McpServer, client: KulaClient) {
         target_start_date_before: z.string().optional().describe("Filter by target start date upper bound (YYYY-MM-DD)"),
       },
     },
-    async ({ page, limit, status, department_ids, employment_type, requisition_type, recruiter_ids, hiring_manager_ids, office_ids, job_ids, created_by_ids, q, sort_by, sort_order, created_after, created_before, updated_after, updated_before, target_hire_date_after, target_hire_date_before, target_start_date_after, target_start_date_before }) => {
+    async ({ page, limit, status, department_ids, employment_type, requisition_type, recruiter_ids, hiring_manager_ids, office_ids, job_ids, created_by_ids, query, sort_by, sort_order, created_after, created_before, updated_after, updated_before, target_hire_date_after, target_hire_date_before, target_start_date_after, target_start_date_before }) => {
       try {
-        const params: Record<string, string | string[] | number[] | undefined> = { page, limit, q, sort_by, sort_order, created_after, created_before, updated_after, updated_before, target_hire_date_after, target_hire_date_before, target_start_date_after, target_start_date_before };
+        const params: Record<string, string | string[] | number[] | undefined> = { page, limit, q: query, sort_by, sort_order, created_after, created_before, updated_after, updated_before, target_hire_date_after, target_hire_date_before, target_start_date_after, target_start_date_before };
         if (status !== undefined) params.status = status.split(",").map((s) => s.trim());
         if (department_ids !== undefined) params.department_ids = department_ids.split(",").map((s) => Number(s.trim()));
         if (employment_type !== undefined) params.employment_type = employment_type.split(",").map((s) => s.trim());

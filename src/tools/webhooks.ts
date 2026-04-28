@@ -102,13 +102,14 @@ export function register(server: McpServer, client: KulaClient) {
   server.registerTool(
     "update_webhook",
     {
-      description: "Update an existing webhook configuration.",
+      description: "Update an existing webhook configuration. Only include fields you want to change.",
       inputSchema: {
         id: z.string().describe("Webhook ID"),
-        url: z.string().describe("Updated URL"),
-        name: z.string().describe("Updated name"),
+        url: z.string().optional().describe("Updated URL"),
+        name: z.string().optional().describe("Updated name"),
         subscribed_events: z
           .array(z.string())
+          .optional()
           .describe("Updated list of event types to subscribe to"),
         description: z.string().optional().describe("Updated description"),
         headers: z.record(z.string()).optional().describe("Updated custom headers"),
@@ -116,7 +117,10 @@ export function register(server: McpServer, client: KulaClient) {
     },
     async ({ id, url, name, subscribed_events, description, headers }) => {
       try {
-        const body: Record<string, unknown> = { url, name, subscribed_events };
+        const body: Record<string, unknown> = {};
+        if (url !== undefined) body.url = url;
+        if (name !== undefined) body.name = name;
+        if (subscribed_events !== undefined) body.subscribed_events = subscribed_events;
         if (description !== undefined) body.description = description;
         if (headers !== undefined) body.headers = headers;
         const data = await client.patch(`/v1/webhooks/${id}`, body);
@@ -312,11 +316,13 @@ export function register(server: McpServer, client: KulaClient) {
       description: "List recent delivery logs for a webhook, including status and response details for each attempt.",
       inputSchema: {
         id: z.string().describe("Webhook ID"),
+        page: z.string().optional().describe("Page number"),
+        limit: z.string().optional().describe("Items per page"),
       },
     },
-    async ({ id }) => {
+    async ({ id, page, limit }) => {
       try {
-        const data = await client.get(`/v1/webhooks/${id}/logs`);
+        const data = await client.get(`/v1/webhooks/${id}/logs`, { page, limit });
         return {
           content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
         };

@@ -75,7 +75,7 @@ Get your API key from [Kula Developer Settings](https://developers.kula.ai).
 
 ## Available Tools
 
-52 tools across 13 categories:
+51 tools across 13 categories:
 
 <details>
 <summary>Organization (4 tools)</summary>
@@ -148,7 +148,7 @@ Get your API key from [Kula Developer Settings](https://developers.kula.ai).
 </details>
 
 <details>
-<summary>Candidates (5 tools)</summary>
+<summary>Candidates (4 tools)</summary>
 
 | Tool | Description |
 |------|-------------|
@@ -156,7 +156,6 @@ Get your API key from [Kula Developer Settings](https://developers.kula.ai).
 | `list_candidates` | List and search candidates — supports keyword search via `query`, plus filters |
 | `get_candidate` | Get details of a specific candidate |
 | `update_candidate` | Update an existing candidate's profile |
-| `upload_candidate_file` | Attach a file (resume, cover letter, or other) to a candidate |
 
 </details>
 

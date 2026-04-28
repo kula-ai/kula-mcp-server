@@ -58,8 +58,8 @@ export function register(server: McpServer, client: KulaClient) {
         if (last_name !== undefined) body.last_name = last_name;
         if (email !== undefined) body.email = email;
         if (phone_number !== undefined) body.phone_number = phone_number;
-        if (tags !== undefined) body.tags = tags;
-        if (skills !== undefined) body.skills = skills;
+        if (tags !== undefined) body.tags = tags.split(",").map((s) => s.trim()).filter(Boolean);
+        if (skills !== undefined) body.skills = skills.split(",").map((s) => s.trim()).filter(Boolean);
         if (job_id !== undefined) body.job_id = Number(job_id);
         if (job_stage_id !== undefined) body.job_stage_id = Number(job_stage_id);
         if (source_id !== undefined) body.source_id = Number(source_id);
@@ -102,7 +102,7 @@ export function register(server: McpServer, client: KulaClient) {
         limit: z.string().optional().describe("Items per page"),
         email: z.string().optional().describe("Filter by email address"),
         sort_by: z.string().optional().describe("Field to sort by"),
-        sort_order: z.string().optional().describe("Sort order: asc or desc"),
+        sort_order: z.enum(["asc", "desc"]).optional().describe("Sort direction"),
         created_after: z.string().optional().describe("Filter by created date (ISO 8601, inclusive lower bound)"),
         created_before: z.string().optional().describe("Filter by created date (ISO 8601, inclusive upper bound)"),
         updated_after: z.string().optional().describe("Filter by updated date (ISO 8601, inclusive lower bound)"),
@@ -182,8 +182,8 @@ export function register(server: McpServer, client: KulaClient) {
         if (email !== undefined) body.email = email;
         if (phone_number !== undefined) body.phone_number = phone_number;
         if (title !== undefined) body.title = title;
-        if (tags !== undefined) body.tags = tags;
-        if (skills !== undefined) body.skills = skills;
+        if (tags !== undefined) body.tags = tags.split(",").map((s) => s.trim()).filter(Boolean);
+        if (skills !== undefined) body.skills = skills.split(",").map((s) => s.trim()).filter(Boolean);
         if (source_id !== undefined) body.source_id = Number(source_id);
         if (social_urls !== undefined) body.social_urls = social_urls;
         if (location !== undefined) {
@@ -196,38 +196,6 @@ export function register(server: McpServer, client: KulaClient) {
         if (additional_info !== undefined) body.additional_info = additional_info;
 
         const data = await client.patch(`/v1/candidates/${id}`, body);
-        return {
-          content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
-        };
-      } catch (error) {
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Error: ${error instanceof Error ? error.message : String(error)}`,
-            },
-          ],
-          isError: true,
-        };
-      }
-    }
-  );
-
-  server.registerTool(
-    "upload_candidate_file",
-    {
-      description: "Attach a file record (resume, cover letter, or other) to a candidate. Note: the actual file binary must be uploaded separately via multipart POST — this tool sets the file kind metadata only.",
-      inputSchema: {
-        id: z.string().describe("Candidate ID"),
-        kind: z.string().optional().describe("File kind: resume, cover_letter, or other"),
-      },
-    },
-    async ({ id, kind }) => {
-      try {
-        const body: Record<string, unknown> = {};
-        if (kind !== undefined) body.kind = kind;
-
-        const data = await client.post(`/v1/candidates/${id}/files`, body);
         return {
           content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
         };

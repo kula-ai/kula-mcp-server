@@ -15,7 +15,7 @@ export function register(server: McpServer, client: KulaClient) {
         office_ids: z.string().optional().describe("Comma-separated office IDs to filter by"),
         status: z.string().optional().describe("Comma-separated job statuses to filter by (draft, published, closed, archived)"),
         sort_by: z.string().optional().describe("Field to sort by"),
-        sort_order: z.string().optional().describe("Sort order: asc or desc"),
+        sort_order: z.enum(["asc", "desc"]).optional().describe("Sort direction"),
         created_after: z.string().optional().describe("Filter by created date (ISO 8601, inclusive lower bound)"),
         created_before: z.string().optional().describe("Filter by created date (ISO 8601, inclusive upper bound)"),
         updated_after: z.string().optional().describe("Filter by updated date (ISO 8601, inclusive lower bound)"),
