@@ -15,6 +15,7 @@ import { register as registerSources } from "./tools/sources.js";
 import { register as registerRejectionReasons } from "./tools/rejection-reasons.js";
 import { register as registerCustomFields } from "./tools/custom-fields.js";
 import { register as registerScorecardSubmissions } from "./tools/scorecard-submissions.js";
+import { register as registerJobStages } from "./tools/job-stages.js";
 
 const apiKey = process.env.KULA_API_KEY;
 if (!apiKey) {
@@ -45,6 +46,7 @@ registerSources(server, client);
 registerRejectionReasons(server, client);
 registerCustomFields(server, client);
 registerScorecardSubmissions(server, client);
+registerJobStages(server, client);
 
 // Start the server with STDIO transport
 const transport = new StdioServerTransport();

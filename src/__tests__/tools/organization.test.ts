@@ -20,6 +20,48 @@ describe("organization tools", () => {
     await cleanup();
   });
 
+  describe("list_milestones", () => {
+    it("calls milestones endpoint", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        data: [{ id: 1, name: "Screening" }],
+      });
+
+      const result = await client.callTool({ name: "list_milestones", arguments: {} });
+
+      const call = (mockKula.get as ReturnType<typeof vi.fn>).mock.calls.at(-1);
+      expect(call[0]).toBe("/v1/milestones");
+      expect(result.isError).toBeFalsy();
+      const text = (result.content as Array<{ type: string; text: string }>)[0].text;
+      expect(JSON.parse(text).data[0].name).toBe("Screening");
+    });
+
+    it("passes pagination and filter params", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: [] });
+
+      await client.callTool({
+        name: "list_milestones",
+        arguments: { page: "2", limit: "10", sort_by: "name", sort_order: "asc", created_after: "2024-01-01T00:00:00Z" },
+      });
+
+      const call = (mockKula.get as ReturnType<typeof vi.fn>).mock.calls.at(-1);
+      expect(call[1].page).toBe("2");
+      expect(call[1].sort_by).toBe("name");
+      expect(call[1].created_after).toBe("2024-01-01T00:00:00Z");
+    });
+
+    it("returns isError true on failure", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("fail"));
+      const result = await client.callTool({ name: "list_milestones", arguments: {} });
+      expect(result.isError).toBe(true);
+    });
+
+    it("handles non-Error throws", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockRejectedValueOnce("fail");
+      const result = await client.callTool({ name: "list_milestones", arguments: {} });
+      expect(result.isError).toBe(true);
+    });
+  });
+
   describe("list_departments", () => {
     it("calls departments endpoint", async () => {
       (mockKula.get as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
