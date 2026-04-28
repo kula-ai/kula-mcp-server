@@ -250,6 +250,91 @@ export function register(server: McpServer, client: KulaClient) {
   );
 
   server.registerTool(
+    "test_webhook",
+    {
+      description: "Send a test payload to a webhook endpoint to verify it is receiving events correctly.",
+      inputSchema: {
+        id: z.string().describe("Webhook ID"),
+      },
+    },
+    async ({ id }) => {
+      try {
+        const data = await client.post(`/v1/webhooks/${id}/test`, {});
+        return {
+          content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
+        };
+      } catch (error) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Error: ${error instanceof Error ? error.message : String(error)}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  server.registerTool(
+    "get_webhook_test_status",
+    {
+      description: "Get the delivery status of a webhook test previously triggered via test_webhook.",
+      inputSchema: {
+        id: z.string().describe("Webhook ID"),
+        test_id: z.string().describe("Test ID returned from test_webhook"),
+      },
+    },
+    async ({ id, test_id }) => {
+      try {
+        const data = await client.get(`/v1/webhooks/${id}/test/${test_id}`);
+        return {
+          content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
+        };
+      } catch (error) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Error: ${error instanceof Error ? error.message : String(error)}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  server.registerTool(
+    "list_webhook_logs",
+    {
+      description: "List recent delivery logs for a webhook, including status and response details for each attempt.",
+      inputSchema: {
+        id: z.string().describe("Webhook ID"),
+      },
+    },
+    async ({ id }) => {
+      try {
+        const data = await client.get(`/v1/webhooks/${id}/logs`);
+        return {
+          content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
+        };
+      } catch (error) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Error: ${error instanceof Error ? error.message : String(error)}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  server.registerTool(
     "list_webhook_events",
     {
       description: "List all available webhook event types you can subscribe to.",

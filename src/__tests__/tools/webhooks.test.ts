@@ -386,5 +386,127 @@ describe("webhooks tools", () => {
       const result = await client.callTool({ name: "get_webhook_sample_payload", arguments: { event_type: "x" } });
       expect(result.isError).toBe(true);
     });
+
+    it("handles non-Error throws in test_webhook", async () => {
+      (mockKula.post as ReturnType<typeof vi.fn>).mockRejectedValueOnce("fail");
+      const result = await client.callTool({ name: "test_webhook", arguments: { id: "x" } });
+      expect(result.isError).toBe(true);
+    });
+
+    it("handles non-Error throws in get_webhook_test_status", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockRejectedValueOnce("fail");
+      const result = await client.callTool({ name: "get_webhook_test_status", arguments: { id: "x", test_id: "t1" } });
+      expect(result.isError).toBe(true);
+    });
+
+    it("handles non-Error throws in list_webhook_logs", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockRejectedValueOnce("fail");
+      const result = await client.callTool({ name: "list_webhook_logs", arguments: { id: "x" } });
+      expect(result.isError).toBe(true);
+    });
+  });
+});
+
+describe("test_webhook", () => {
+  let client: Client;
+  let mockKula: KulaClient;
+  let cleanup: () => Promise<void>;
+
+  beforeAll(async () => {
+    mockKula = createMockClient();
+    const setup = await setupMcpTest(register, mockKula);
+    client = setup.client;
+    cleanup = setup.cleanup;
+  });
+
+  afterAll(async () => {
+    await cleanup();
+  });
+
+  it("posts to the test endpoint", async () => {
+    (mockKula.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ test_id: "t123" });
+
+    const result = await client.callTool({ name: "test_webhook", arguments: { id: "wh-1" } });
+
+    expect(mockKula.post).toHaveBeenCalledWith("/v1/webhooks/wh-1/test", {});
+    expect(result.isError).toBeFalsy();
+    const text = (result.content as Array<{ type: string; text: string }>)[0].text;
+    expect(JSON.parse(text).test_id).toBe("t123");
+  });
+
+  it("returns isError on failure", async () => {
+    (mockKula.post as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("fail"));
+    const result = await client.callTool({ name: "test_webhook", arguments: { id: "wh-1" } });
+    expect(result.isError).toBe(true);
+  });
+});
+
+describe("get_webhook_test_status", () => {
+  let client: Client;
+  let mockKula: KulaClient;
+  let cleanup: () => Promise<void>;
+
+  beforeAll(async () => {
+    mockKula = createMockClient();
+    const setup = await setupMcpTest(register, mockKula);
+    client = setup.client;
+    cleanup = setup.cleanup;
+  });
+
+  afterAll(async () => {
+    await cleanup();
+  });
+
+  it("calls the test status endpoint", async () => {
+    (mockKula.get as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ status: "delivered" });
+
+    const result = await client.callTool({ name: "get_webhook_test_status", arguments: { id: "wh-1", test_id: "t123" } });
+
+    const call = (mockKula.get as ReturnType<typeof vi.fn>).mock.calls.at(-1);
+    expect(call[0]).toBe("/v1/webhooks/wh-1/test/t123");
+    expect(result.isError).toBeFalsy();
+    const text = (result.content as Array<{ type: string; text: string }>)[0].text;
+    expect(JSON.parse(text).status).toBe("delivered");
+  });
+
+  it("returns isError on failure", async () => {
+    (mockKula.get as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("fail"));
+    const result = await client.callTool({ name: "get_webhook_test_status", arguments: { id: "wh-1", test_id: "t1" } });
+    expect(result.isError).toBe(true);
+  });
+});
+
+describe("list_webhook_logs", () => {
+  let client: Client;
+  let mockKula: KulaClient;
+  let cleanup: () => Promise<void>;
+
+  beforeAll(async () => {
+    mockKula = createMockClient();
+    const setup = await setupMcpTest(register, mockKula);
+    client = setup.client;
+    cleanup = setup.cleanup;
+  });
+
+  afterAll(async () => {
+    await cleanup();
+  });
+
+  it("calls the logs endpoint", async () => {
+    (mockKula.get as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: [{ id: "log-1", status: "success" }] });
+
+    const result = await client.callTool({ name: "list_webhook_logs", arguments: { id: "wh-1" } });
+
+    const call = (mockKula.get as ReturnType<typeof vi.fn>).mock.calls.at(-1);
+    expect(call[0]).toBe("/v1/webhooks/wh-1/logs");
+    expect(result.isError).toBeFalsy();
+    const text = (result.content as Array<{ type: string; text: string }>)[0].text;
+    expect(JSON.parse(text).data[0].status).toBe("success");
+  });
+
+  it("returns isError on failure", async () => {
+    (mockKula.get as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("fail"));
+    const result = await client.callTool({ name: "list_webhook_logs", arguments: { id: "wh-1" } });
+    expect(result.isError).toBe(true);
   });
 });
