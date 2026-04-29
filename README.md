@@ -75,7 +75,7 @@ Get your API key from [Kula Developer Settings](https://developers.kula.ai).
 
 ## Available Tools
 
-51 tools across 13 categories:
+53 tools across 13 categories:
 
 <details>
 <summary>Organization (4 tools)</summary>
@@ -117,11 +117,12 @@ Get your API key from [Kula Developer Settings](https://developers.kula.ai).
 </details>
 
 <details>
-<summary>Jobs (2 tools)</summary>
+<summary>Jobs (3 tools)</summary>
 
 | Tool | Description |
 |------|-------------|
-| `list_jobs` | List and search jobs — supports keyword search via `query`, plus filters |
+| `list_jobs` | List jobs with filters (status, department, office, date ranges, sort) |
+| `search_jobs` | Search jobs by title (partial match) with optional filters |
 | `get_job` | Get details of a specific job |
 
 </details>
@@ -148,12 +149,13 @@ Get your API key from [Kula Developer Settings](https://developers.kula.ai).
 </details>
 
 <details>
-<summary>Candidates (4 tools)</summary>
+<summary>Candidates (5 tools)</summary>
 
 | Tool | Description |
 |------|-------------|
 | `create_candidate` | Create a new candidate in the system |
-| `list_candidates` | List and search candidates — supports keyword search via `query`, plus filters |
+| `list_candidates` | List candidates with simple filters (email, date ranges, sort) |
+| `search_candidates` | Search candidates by name, email, skills, tags, location, and more |
 | `get_candidate` | Get details of a specific candidate |
 | `update_candidate` | Update an existing candidate's profile |
 
