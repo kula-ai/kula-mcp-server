@@ -118,6 +118,17 @@ describe("webhooks tools", () => {
         headers: { "X-New": "header" },
       });
     });
+
+    it("omits undefined optional fields", async () => {
+      (mockKula.patch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ id: "wh-1" });
+
+      await client.callTool({
+        name: "update_webhook",
+        arguments: { id: "wh-1" },
+      });
+
+      expect(mockKula.patch).toHaveBeenCalledWith("/v1/webhooks/wh-1", {});
+    });
   });
 
   describe("list_webhooks", () => {

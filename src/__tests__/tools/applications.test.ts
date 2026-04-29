@@ -143,6 +143,12 @@ describe("applications tools", () => {
       await client.callTool({ name: "update_application_note", arguments: { application_id: "5", id: "n-1", body: "Updated" } });
       expect(mockKula.patch).toHaveBeenCalledWith("/v1/applications/5/notes/n-1", { body: "Updated" });
     });
+
+    it("includes notify_recruiter when provided", async () => {
+      (mockKula.patch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ id: "n-1" });
+      await client.callTool({ name: "update_application_note", arguments: { application_id: "5", id: "n-1", notify_recruiter: "true" } });
+      expect(mockKula.patch).toHaveBeenCalledWith("/v1/applications/5/notes/n-1", { notify_recruiter: true });
+    });
   });
 
   describe("delete_application_note", () => {
@@ -208,8 +214,20 @@ describe("applications tools", () => {
       expect(result.isError).toBe(true);
     });
 
+    it("handles non-Error throws in list_application_notes", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockRejectedValueOnce("string error");
+      const result = await client.callTool({ name: "list_application_notes", arguments: { application_id: "5" } });
+      expect(result.isError).toBe(true);
+    });
+
     it("handles errors in create_application_note", async () => {
       (mockKula.post as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("fail"));
+      const result = await client.callTool({ name: "create_application_note", arguments: { application_id: "5", body: "Note" } });
+      expect(result.isError).toBe(true);
+    });
+
+    it("handles non-Error throws in create_application_note", async () => {
+      (mockKula.post as ReturnType<typeof vi.fn>).mockRejectedValueOnce("string error");
       const result = await client.callTool({ name: "create_application_note", arguments: { application_id: "5", body: "Note" } });
       expect(result.isError).toBe(true);
     });
@@ -220,8 +238,20 @@ describe("applications tools", () => {
       expect(result.isError).toBe(true);
     });
 
+    it("handles non-Error throws in update_application_note", async () => {
+      (mockKula.patch as ReturnType<typeof vi.fn>).mockRejectedValueOnce("string error");
+      const result = await client.callTool({ name: "update_application_note", arguments: { application_id: "5", id: "n-1", body: "Updated" } });
+      expect(result.isError).toBe(true);
+    });
+
     it("handles errors in delete_application_note", async () => {
       (mockKula.delete as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("fail"));
+      const result = await client.callTool({ name: "delete_application_note", arguments: { application_id: "5", id: "n-1" } });
+      expect(result.isError).toBe(true);
+    });
+
+    it("handles non-Error throws in delete_application_note", async () => {
+      (mockKula.delete as ReturnType<typeof vi.fn>).mockRejectedValueOnce("string error");
       const result = await client.callTool({ name: "delete_application_note", arguments: { application_id: "5", id: "n-1" } });
       expect(result.isError).toBe(true);
     });
