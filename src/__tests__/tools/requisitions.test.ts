@@ -84,7 +84,7 @@ describe("requisitions tools", () => {
       await client.callTool({
         name: "list_requisitions",
         arguments: {
-          q: "engineer",
+          query: "engineer",
           sort_by: "opened_at",
           sort_order: "desc",
           created_after: "2024-01-01T00:00:00Z",
