@@ -143,7 +143,6 @@ describe("candidates tools", () => {
       });
 
       expect(mockKula.get).toHaveBeenCalledWith("/v1/candidates", {
-        query: undefined,
         page: "1",
         limit: "10",
         email: "jane@example.com",
@@ -168,14 +167,95 @@ describe("candidates tools", () => {
       });
       expect(result.isError).toBeFalsy();
     });
+  });
 
-    it("passes query param for keyword search", async () => {
-      (mockKula.get as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: [] });
+  describe("search_candidates", () => {
+    it("posts to search endpoint with no filters", async () => {
+      (mockKula.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        data: [],
+        meta: { total: 0 },
+      });
 
-      await client.callTool({ name: "list_candidates", arguments: { query: "jane" } });
+      const result = await client.callTool({
+        name: "search_candidates",
+        arguments: {},
+      });
 
-      const call = (mockKula.get as ReturnType<typeof vi.fn>).mock.calls.at(-1);
-      expect(call[1].query).toBe("jane");
+      expect(mockKula.post).toHaveBeenCalledWith("/v1/candidates/search", {});
+      expect(result.isError).toBeFalsy();
+    });
+
+    it("passes query for full-text search", async () => {
+      (mockKula.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: [] });
+
+      await client.callTool({ name: "search_candidates", arguments: { query: "Jane" } });
+
+      const call = (mockKula.post as ReturnType<typeof vi.fn>).mock.calls.at(-1);
+      expect(call[1].query).toBe("Jane");
+    });
+
+    it("converts skill_ids, tag_ids, source_ids, job_ids to numbers", async () => {
+      (mockKula.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: [] });
+
+      await client.callTool({
+        name: "search_candidates",
+        arguments: { skill_ids: ["1", "2"], tag_ids: ["3"], source_ids: ["4"], job_ids: ["5", "6"] },
+      });
+
+      const call = (mockKula.post as ReturnType<typeof vi.fn>).mock.calls.at(-1);
+      expect(call[1].skill_ids).toEqual([1, 2]);
+      expect(call[1].tag_ids).toEqual([3]);
+      expect(call[1].source_ids).toEqual([4]);
+      expect(call[1].job_ids).toEqual([5, 6]);
+    });
+
+    it("passes has_resume boolean", async () => {
+      (mockKula.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: [] });
+
+      await client.callTool({ name: "search_candidates", arguments: { has_resume: true } });
+
+      const call = (mockKula.post as ReturnType<typeof vi.fn>).mock.calls.at(-1);
+      expect(call[1].has_resume).toBe(true);
+    });
+
+    it("converts location IDs to numbers", async () => {
+      (mockKula.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: [] });
+
+      await client.callTool({
+        name: "search_candidates",
+        arguments: { country_id: "10", state_id: "20", city_id: "30" },
+      });
+
+      const call = (mockKula.post as ReturnType<typeof vi.fn>).mock.calls.at(-1);
+      expect(call[1].country_id).toBe(10);
+      expect(call[1].state_id).toBe(20);
+      expect(call[1].city_id).toBe(30);
+    });
+
+    it("passes cursor and converts limit to number", async () => {
+      (mockKula.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: [] });
+
+      await client.callTool({
+        name: "search_candidates",
+        arguments: { cursor: "tok_abc123", limit: "50", page: "2" },
+      });
+
+      const call = (mockKula.post as ReturnType<typeof vi.fn>).mock.calls.at(-1);
+      expect(call[1].cursor).toBe("tok_abc123");
+      expect(call[1].limit).toBe(50);
+      expect(call[1].page).toBe(2);
+    });
+
+    it("returns isError true on failure", async () => {
+      (mockKula.post as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("search failed"));
+      const result = await client.callTool({ name: "search_candidates", arguments: {} });
+      expect(result.isError).toBe(true);
+    });
+
+    it("handles non-Error throws", async () => {
+      (mockKula.post as ReturnType<typeof vi.fn>).mockRejectedValueOnce("fail");
+      const result = await client.callTool({ name: "search_candidates", arguments: {} });
+      expect(result.isError).toBe(true);
     });
   });
 
@@ -328,6 +408,12 @@ describe("candidates tools", () => {
     it("handles non-Error throws in list_candidates", async () => {
       (mockKula.get as ReturnType<typeof vi.fn>).mockRejectedValueOnce("fail");
       const result = await client.callTool({ name: "list_candidates", arguments: {} });
+      expect(result.isError).toBe(true);
+    });
+
+    it("handles Error in search_candidates", async () => {
+      (mockKula.post as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("fail"));
+      const result = await client.callTool({ name: "search_candidates", arguments: {} });
       expect(result.isError).toBe(true);
     });
 

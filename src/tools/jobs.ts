@@ -6,25 +6,27 @@ export function register(server: McpServer, client: KulaClient) {
   server.registerTool(
     "list_jobs",
     {
-      description: "List and search jobs — supports keyword search via `query`, plus filters (status, department, office, date ranges). Only use when the user explicitly asks about jobs (not job posts).",
+      description:
+        "List jobs with SQL-based filters and sorting. " +
+        "Use this for browsing jobs or filtering by status, department, office, or date ranges. " +
+        "For title search (partial match supported), use search_jobs instead.",
       inputSchema: {
-        query: z.string().optional().describe("Search query to find jobs by title or keyword"),
-        page: z.string().optional().describe("Page number"),
-        limit: z.string().optional().describe("Items per page"),
-        department_ids: z.string().optional().describe("Comma-separated department IDs to filter by"),
+        page: z.string().optional().describe("Page number (default: 1)"),
+        limit: z.string().optional().describe("Items per page (default: 20, max: 100)"),
+        department_ids: z.string().optional().describe("Comma-separated department IDs to filter by (includes descendants)"),
         office_ids: z.string().optional().describe("Comma-separated office IDs to filter by"),
-        status: z.string().optional().describe("Comma-separated job statuses to filter by (draft, published, closed, archived)"),
-        sort_by: z.string().optional().describe("Field to sort by"),
-        sort_order: z.enum(["asc", "desc"]).optional().describe("Sort direction"),
-        created_after: z.string().optional().describe("Filter by created date (ISO 8601, inclusive lower bound)"),
-        created_before: z.string().optional().describe("Filter by created date (ISO 8601, inclusive upper bound)"),
-        updated_after: z.string().optional().describe("Filter by updated date (ISO 8601, inclusive lower bound)"),
-        updated_before: z.string().optional().describe("Filter by updated date (ISO 8601, inclusive upper bound)"),
+        status: z.string().optional().describe("Comma-separated statuses to filter by: draft, published, closed, archived"),
+        sort_by: z.enum(["created_at", "updated_at"]).optional().describe("Field to sort by (default: created_at)"),
+        sort_order: z.enum(["asc", "desc"]).optional().describe("Sort direction (default: desc)"),
+        created_after: z.string().optional().describe("Return jobs created on or after this ISO 8601 datetime"),
+        created_before: z.string().optional().describe("Return jobs created on or before this ISO 8601 datetime"),
+        updated_after: z.string().optional().describe("Return jobs updated on or after this ISO 8601 datetime"),
+        updated_before: z.string().optional().describe("Return jobs updated on or before this ISO 8601 datetime"),
       },
     },
-    async ({ query, page, limit, department_ids, office_ids, status, sort_by, sort_order, created_after, created_before, updated_after, updated_before }) => {
+    async ({ page, limit, department_ids, office_ids, status, sort_by, sort_order, created_after, created_before, updated_after, updated_before }) => {
       try {
-        const params: Record<string, string | string[] | number[] | undefined> = { query, page, limit, sort_by, sort_order, created_after, created_before, updated_after, updated_before };
+        const params: Record<string, string | string[] | number[] | undefined> = { page, limit, sort_by, sort_order, created_after, created_before, updated_after, updated_before };
         if (department_ids !== undefined) params.department_ids = department_ids.split(",").map((s) => Number(s.trim()));
         if (office_ids !== undefined) params.office_ids = office_ids.split(",").map((s) => Number(s.trim()));
         if (status !== undefined) params.status = status.split(",").map((s) => s.trim());
@@ -47,9 +49,55 @@ export function register(server: McpServer, client: KulaClient) {
   );
 
   server.registerTool(
+    "search_jobs",
+    {
+      description:
+        "Search jobs by title (partial match supported) with optional filters. " +
+        "Preferred over list_jobs when you need to find jobs by name. " +
+        "Results are sorted by relevance.",
+      inputSchema: {
+        query: z.string().optional().describe("Search jobs by title — partial match supported"),
+        department_ids: z.array(z.string()).optional().describe("Filter by department IDs (includes descendants)"),
+        office_ids: z.array(z.string()).optional().describe("Filter by office IDs"),
+        status: z.array(z.enum(["draft", "published", "closed", "archived"])).optional().describe("Filter by status"),
+        page: z.string().optional().describe("Page number (default: 1)"),
+        limit: z.string().optional().describe("Items per page (default: 20, max: 100)"),
+      },
+    },
+    async ({ query, department_ids, office_ids, status, page, limit }) => {
+      try {
+        const body: Record<string, unknown> = {};
+        if (query !== undefined) body.query = query;
+        if (department_ids !== undefined) body.department_ids = department_ids.map(Number);
+        if (office_ids !== undefined) body.office_ids = office_ids.map(Number);
+        if (status !== undefined) body.status = status;
+        if (page !== undefined) body.page = Number(page);
+        if (limit !== undefined) body.limit = Number(limit);
+
+        const data = await client.post("/v1/jobs/search", body);
+        return {
+          content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
+        };
+      } catch (error) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Error: ${error instanceof Error ? error.message : String(error)}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  server.registerTool(
     "get_job",
     {
-      description: "Get details of a specific job. Only use when the user asks about a specific job (not job post).",
+      description:
+        "Retrieve full details of a specific job by ID, including description and interview stages. " +
+        "Use this when you already have the job ID. To find a job by title, use search_jobs first.",
       inputSchema: {
         id: z.string().describe("Job ID"),
       },
