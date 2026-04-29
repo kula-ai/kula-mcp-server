@@ -57,9 +57,9 @@ export function register(server: McpServer, client: KulaClient) {
         "Results are sorted by relevance.",
       inputSchema: {
         query: z.string().optional().describe("Search jobs by title — partial match supported"),
-        department_ids: z.array(z.string()).optional().describe("Filter by department IDs (includes descendants)"),
-        office_ids: z.array(z.string()).optional().describe("Filter by office IDs"),
-        status: z.array(z.enum(["draft", "published", "closed", "archived"])).optional().describe("Filter by status"),
+        department_ids: z.string().optional().describe("Comma-separated department IDs to filter by (includes descendants)"),
+        office_ids: z.string().optional().describe("Comma-separated office IDs to filter by"),
+        status: z.string().optional().describe("Comma-separated statuses to filter by: draft, pending_approval, rejected, scheduled, published, closed, archived"),
         page: z.string().optional().describe("Page number (default: 1)"),
         limit: z.string().optional().describe("Items per page (default: 20, max: 100)"),
       },
@@ -68,9 +68,9 @@ export function register(server: McpServer, client: KulaClient) {
       try {
         const body: Record<string, unknown> = {};
         if (query !== undefined) body.query = query;
-        if (department_ids !== undefined) body.department_ids = department_ids.map(Number);
-        if (office_ids !== undefined) body.office_ids = office_ids.map(Number);
-        if (status !== undefined) body.status = status;
+        if (department_ids !== undefined) body.department_ids = department_ids.split(",").map((s) => Number(s.trim()));
+        if (office_ids !== undefined) body.office_ids = office_ids.split(",").map((s) => Number(s.trim()));
+        if (status !== undefined) body.status = status.split(",").map((s) => s.trim());
         if (page !== undefined) body.page = Number(page);
         if (limit !== undefined) body.limit = Number(limit);
 

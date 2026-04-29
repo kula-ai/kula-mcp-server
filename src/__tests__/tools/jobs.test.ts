@@ -92,12 +92,12 @@ describe("jobs tools", () => {
       expect(result.isError).toBeFalsy();
     });
 
-    it("converts department_ids and office_ids to integers", async () => {
+    it("splits department_ids and office_ids into integer arrays", async () => {
       (mockKula.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: [] });
 
       await client.callTool({
         name: "search_jobs",
-        arguments: { department_ids: ["3", "4"], office_ids: ["10", "11"] },
+        arguments: { department_ids: "3,4", office_ids: "10,11" },
       });
 
       const call = (mockKula.post as ReturnType<typeof vi.fn>).mock.calls.at(-1);
@@ -105,18 +105,45 @@ describe("jobs tools", () => {
       expect(call[1].office_ids).toEqual([10, 11]);
     });
 
-    it("passes status, page, and limit when provided", async () => {
+    it("splits status and passes page and limit when provided", async () => {
       (mockKula.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: [] });
 
       await client.callTool({
         name: "search_jobs",
-        arguments: { status: ["published"], page: "2", limit: "10" },
+        arguments: { status: "published,closed", page: "2", limit: "10" },
       });
 
       const call = (mockKula.post as ReturnType<typeof vi.fn>).mock.calls.at(-1);
-      expect(call[1].status).toEqual(["published"]);
+      expect(call[1].status).toEqual(["published", "closed"]);
       expect(call[1].page).toBe(2);
       expect(call[1].limit).toBe(10);
+    });
+
+    it("returns job fields from populated response", async () => {
+      (mockKula.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        data: [
+          {
+            id: 1,
+            name: "Senior Engineer",
+            status: "published",
+            department: { id: 10, name: "Engineering" },
+            offices: [{ id: 5, name: "London" }],
+            stages: [{ id: 2, name: "Phone Screen", position: 1 }],
+          },
+        ],
+        meta: { total: 1, page: 1, limit: 20 },
+      });
+
+      const result = await client.callTool({ name: "search_jobs", arguments: { query: "engineer" } });
+
+      expect(result.isError).toBeFalsy();
+      const json = JSON.parse((result.content as Array<{ type: string; text: string }>)[0].text);
+      expect(json.data[0].id).toBe(1);
+      expect(json.data[0].name).toBe("Senior Engineer");
+      expect(json.data[0].status).toBe("published");
+      expect(json.data[0].department.name).toBe("Engineering");
+      expect(json.data[0].offices[0].name).toBe("London");
+      expect(json.data[0].stages[0].name).toBe("Phone Screen");
     });
 
     it("returns isError true when client throws", async () => {
