@@ -18,7 +18,7 @@ export function register(server: McpServer, client: KulaClient) {
         skills: z.string().optional().describe("Comma-separated skill names to attach"),
         job_id: z.string().optional().describe("Job ID to add this candidate to a pipeline"),
         job_stage_id: z.string().optional().describe("Stage ID within the job pipeline (use with job_id)"),
-        source_id: z.string().optional().describe("Source ID — get IDs from list_all_candidate_sources"),
+        source_id: z.string().optional().describe("Source ID — get IDs from list_sources"),
         credited_to_user_id: z.string().optional().describe("User ID to credit for this candidate"),
         social_urls: z
           .array(
@@ -164,7 +164,7 @@ export function register(server: McpServer, client: KulaClient) {
         query: z.string().optional().describe("Full-text search across name, email, phone number, and resume text"),
         skill_ids: z.array(z.string()).optional().describe("Filter by skill IDs — returns candidates who have ALL of these skills"),
         tag_ids: z.array(z.string()).optional().describe("Filter by tag IDs — returns candidates who have ANY of these tags"),
-        source_ids: z.array(z.string()).optional().describe("Filter by source IDs — get IDs from list_all_candidate_sources"),
+        source_ids: z.array(z.string()).optional().describe("Filter by source IDs — get IDs from list_sources"),
         job_ids: z.array(z.string()).optional().describe("Filter by job IDs — returns candidates who have applied to these jobs"),
         has_resume: z.boolean().optional().describe("true = only candidates with a resume; false = only without"),
         country_id: z.string().optional().describe("Filter by country ID"),
@@ -253,7 +253,7 @@ export function register(server: McpServer, client: KulaClient) {
         title: z.string().optional().describe("Candidate's current job title"),
         tags: z.string().optional().describe("Comma-separated tag names (replaces existing tags)"),
         skills: z.string().optional().describe("Comma-separated skill names (replaces existing skills)"),
-        source_id: z.string().optional().describe("Source ID — get IDs from list_all_candidate_sources"),
+        source_id: z.string().optional().describe("Source ID — get IDs from list_sources"),
         social_urls: z
           .array(
             z.object({
