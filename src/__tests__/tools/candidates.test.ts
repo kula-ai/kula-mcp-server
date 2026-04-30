@@ -194,12 +194,12 @@ describe("candidates tools", () => {
       expect(call[1].query).toBe("Jane");
     });
 
-    it("converts skill_ids, tag_ids, source_ids, job_ids to numbers", async () => {
+    it("converts comma-separated skill_ids, tag_ids, source_ids, job_ids to number arrays", async () => {
       (mockKula.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: [] });
 
       await client.callTool({
         name: "search_candidates",
-        arguments: { skill_ids: ["1", "2"], tag_ids: ["3"], source_ids: ["4"], job_ids: ["5", "6"] },
+        arguments: { skill_ids: "1,2", tag_ids: "3", source_ids: "4", job_ids: "5,6" },
       });
 
       const call = (mockKula.post as ReturnType<typeof vi.fn>).mock.calls.at(-1);

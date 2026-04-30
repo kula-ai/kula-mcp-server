@@ -162,10 +162,10 @@ export function register(server: McpServer, client: KulaClient) {
             "Omit this field entirely when changing any filter — cursors are bound to a specific search context."
           ),
         query: z.string().optional().describe("Full-text search across name, email, phone number, and resume text"),
-        skill_ids: z.array(z.string()).optional().describe("Filter by skill IDs — returns candidates who have ALL of these skills"),
-        tag_ids: z.array(z.string()).optional().describe("Filter by tag IDs — returns candidates who have ANY of these tags"),
-        source_ids: z.array(z.string()).optional().describe("Filter by source IDs — get IDs from list_sources"),
-        job_ids: z.array(z.string()).optional().describe("Filter by job IDs — returns candidates who have applied to these jobs"),
+        skill_ids: z.string().optional().describe("Comma-separated skill IDs — returns candidates who have ALL of these skills"),
+        tag_ids: z.string().optional().describe("Comma-separated tag IDs — returns candidates who have ANY of these tags"),
+        source_ids: z.string().optional().describe("Comma-separated source IDs — get IDs from list_sources"),
+        job_ids: z.string().optional().describe("Comma-separated job IDs — returns candidates who have applied to these jobs"),
         has_resume: z.boolean().optional().describe("true = only candidates with a resume; false = only without"),
         country_id: z.string().optional().describe("Filter by country ID"),
         state_id: z.string().optional().describe("Filter by state/province ID"),
@@ -179,10 +179,11 @@ export function register(server: McpServer, client: KulaClient) {
         const body: Record<string, unknown> = {};
         if (cursor !== undefined) body.cursor = cursor;
         if (query !== undefined) body.query = query;
-        if (skill_ids !== undefined) body.skill_ids = skill_ids.map(Number).filter((n) => !isNaN(n));
-        if (tag_ids !== undefined) body.tag_ids = tag_ids.map(Number).filter((n) => !isNaN(n));
-        if (source_ids !== undefined) body.source_ids = source_ids.map(Number).filter((n) => !isNaN(n));
-        if (job_ids !== undefined) body.job_ids = job_ids.map(Number).filter((n) => !isNaN(n));
+        const toIds = (s: string) => s.split(",").map((v) => Number(v.trim())).filter((n) => !isNaN(n));
+        if (skill_ids !== undefined) body.skill_ids = toIds(skill_ids);
+        if (tag_ids !== undefined) body.tag_ids = toIds(tag_ids);
+        if (source_ids !== undefined) body.source_ids = toIds(source_ids);
+        if (job_ids !== undefined) body.job_ids = toIds(job_ids);
         if (has_resume !== undefined) body.has_resume = has_resume;
         if (country_id !== undefined) body.country_id = Number(country_id);
         if (state_id !== undefined) body.state_id = Number(state_id);

@@ -256,54 +256,29 @@ export function register(server: McpServer, client: KulaClient) {
   server.registerTool(
     "test_webhook",
     {
-      description: "Send a test payload to a webhook endpoint to verify it is receiving events correctly.",
+      description: "Send a test payload to a webhook and wait for the delivery result. Polls until delivered or failed (30s timeout).",
       inputSchema: {
         id: z.string().describe("Webhook ID"),
       },
     },
     async ({ id }) => {
       try {
-        const data = await client.post(`/v1/webhooks/${id}/test`, {});
+        const { test_id } = await client.post(`/v1/webhooks/${id}/test`, {}) as { test_id: string };
+        const deadline = Date.now() + 30_000;
+        while (Date.now() < deadline) {
+          await new Promise((resolve) => setTimeout(resolve, 2_000));
+          const result = await client.get(`/v1/webhooks/${id}/test/${test_id}`) as { status: string };
+          if (result.status === "delivered" || result.status === "failed") {
+            return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+          }
+        }
         return {
-          content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
-        };
-      } catch (error) {
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Error: ${error instanceof Error ? error.message : String(error)}`,
-            },
-          ],
+          content: [{ type: "text", text: "Timed out waiting for webhook delivery after 30 seconds." }],
           isError: true,
         };
-      }
-    }
-  );
-
-  server.registerTool(
-    "get_webhook_test_status",
-    {
-      description: "Get the delivery status of a webhook test previously triggered via test_webhook.",
-      inputSchema: {
-        id: z.string().describe("Webhook ID"),
-        test_id: z.string().describe("Test ID returned from test_webhook"),
-      },
-    },
-    async ({ id, test_id }) => {
-      try {
-        const data = await client.get(`/v1/webhooks/${id}/test/${test_id}`);
-        return {
-          content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
-        };
       } catch (error) {
         return {
-          content: [
-            {
-              type: "text",
-              text: `Error: ${error instanceof Error ? error.message : String(error)}`,
-            },
-          ],
+          content: [{ type: "text", text: `Error: ${error instanceof Error ? error.message : String(error)}` }],
           isError: true,
         };
       }

@@ -119,7 +119,10 @@ export function register(server: McpServer, client: KulaClient) {
     },
     async ({ application_id, page, limit }) => {
       try {
-        const data = await client.get(`/v1/applications/${application_id}/notes`, { page, limit });
+        const params: Record<string, string | undefined> = {};
+        if (page !== undefined) params.page = page;
+        if (limit !== undefined) params.limit = limit;
+        const data = await client.get(`/v1/applications/${application_id}/notes`, params);
         return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
       } catch (error) {
         return {
