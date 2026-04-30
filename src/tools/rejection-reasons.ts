@@ -10,8 +10,8 @@ export function register(server: McpServer, client: KulaClient) {
       inputSchema: {
         page: z.string().optional().describe("Page number"),
         limit: z.string().optional().describe("Items per page"),
-        sort_by: z.string().optional().describe("Field to sort by"),
-        sort_order: z.string().optional().describe("Sort order: asc or desc"),
+        sort_by: z.enum(["created_at", "updated_at"]).optional().describe("Field to sort by (default: created_at)"),
+        sort_order: z.enum(["asc", "desc"]).optional().describe("Sort direction (default: desc)"),
         created_after: z.string().optional().describe("Filter by created date (ISO 8601, inclusive lower bound)"),
         created_before: z.string().optional().describe("Filter by created date (ISO 8601, inclusive upper bound)"),
         updated_after: z.string().optional().describe("Filter by updated date (ISO 8601, inclusive lower bound)"),

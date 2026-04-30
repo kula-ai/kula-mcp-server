@@ -21,7 +21,7 @@ export function register(server: McpServer, client: KulaClient) {
         job_ids: z.string().optional().describe("Comma-separated job IDs to filter by"),
         created_by_ids: z.string().optional().describe("Comma-separated user IDs to filter by creator"),
         query: z.string().optional().describe("Full-text search query"),
-        sort_by: z.string().optional().describe("Field to sort by (created_at, updated_at, opened_at, target_hire_date)"),
+        sort_by: z.enum(["created_at", "updated_at", "opened_at", "target_hire_date"]).optional().describe("Field to sort by (default: created_at)"),
         sort_order: z.enum(["asc", "desc"]).optional().describe("Sort direction"),
         created_after: z.string().optional().describe("Filter by created date (ISO 8601, inclusive lower bound)"),
         created_before: z.string().optional().describe("Filter by created date (ISO 8601, inclusive upper bound)"),

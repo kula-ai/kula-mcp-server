@@ -179,10 +179,10 @@ export function register(server: McpServer, client: KulaClient) {
         const body: Record<string, unknown> = {};
         if (cursor !== undefined) body.cursor = cursor;
         if (query !== undefined) body.query = query;
-        if (skill_ids !== undefined) body.skill_ids = skill_ids.map(Number);
-        if (tag_ids !== undefined) body.tag_ids = tag_ids.map(Number);
-        if (source_ids !== undefined) body.source_ids = source_ids.map(Number);
-        if (job_ids !== undefined) body.job_ids = job_ids.map(Number);
+        if (skill_ids !== undefined) body.skill_ids = skill_ids.map(Number).filter((n) => !isNaN(n));
+        if (tag_ids !== undefined) body.tag_ids = tag_ids.map(Number).filter((n) => !isNaN(n));
+        if (source_ids !== undefined) body.source_ids = source_ids.map(Number).filter((n) => !isNaN(n));
+        if (job_ids !== undefined) body.job_ids = job_ids.map(Number).filter((n) => !isNaN(n));
         if (has_resume !== undefined) body.has_resume = has_resume;
         if (country_id !== undefined) body.country_id = Number(country_id);
         if (state_id !== undefined) body.state_id = Number(state_id);
