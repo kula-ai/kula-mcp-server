@@ -32,7 +32,7 @@ describe("scorecard-submissions tools", () => {
       });
 
       expect(mockKula.get).toHaveBeenCalledWith(
-        "/v1/applications/42/scorecard-submissions",
+        "/v1/applications/42/scorecards",
         expect.objectContaining({ page: "1", limit: "10" })
       );
       expect(result.isError).toBeFalsy();
@@ -52,7 +52,7 @@ describe("scorecard-submissions tools", () => {
       });
 
       const call = (mockKula.get as ReturnType<typeof vi.fn>).mock.calls.at(-1);
-      expect(call[0]).toBe("/v1/applications/10/scorecard-submissions");
+      expect(call[0]).toBe("/v1/applications/10/scorecards");
       expect(call[1]).toMatchObject({
         sort_by: "created_at",
         sort_order: "asc",

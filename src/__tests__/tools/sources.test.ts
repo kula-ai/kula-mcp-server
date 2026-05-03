@@ -32,7 +32,7 @@ describe("sources tools", () => {
       });
 
       const call = (mockKula.get as ReturnType<typeof vi.fn>).mock.calls.at(-1);
-      expect(call[0]).toBe("/v1/sources");
+      expect(call[0]).toBe("/v1/candidate-sources");
       expect(call[1].page).toBe("1");
       expect(call[1].limit).toBe("20");
       expect(result.isError).toBeFalsy();

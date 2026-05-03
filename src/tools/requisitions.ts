@@ -280,7 +280,7 @@ export function register(server: McpServer, client: KulaClient) {
         "Close a requisition. Only requisitions in a closeable state can be closed.",
       inputSchema: {
         id: z.string().describe("Requisition ID"),
-        reason: z.string().describe("Reason for closing the requisition (required, max 255 characters)"),
+        reason: z.string().optional().describe("Reason for closing the requisition (max 255 characters)"),
         apply_to_group: z
           .boolean()
           .optional()
@@ -291,7 +291,8 @@ export function register(server: McpServer, client: KulaClient) {
     },
     async ({ id, reason, apply_to_group }) => {
       try {
-        const body: Record<string, unknown> = { reason };
+        const body: Record<string, unknown> = {};
+        if (reason !== undefined) body.reason = reason;
         if (apply_to_group !== undefined) body.apply_to_group = apply_to_group;
         const data = await client.post(`/v1/requisitions/${id}/close`, body);
         return {

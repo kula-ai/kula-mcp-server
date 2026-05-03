@@ -28,14 +28,14 @@ describe("custom-fields tools", () => {
 
       const result = await client.callTool({
         name: "list_custom_fields",
-        arguments: { page: "1", limit: "10", subject_type: "candidate" },
+        arguments: { page: "1", limit: "10", type: "candidate" },
       });
 
       const call = (mockKula.get as ReturnType<typeof vi.fn>).mock.calls.at(-1);
       expect(call[0]).toBe("/v1/custom-fields");
       expect(call[1].page).toBe("1");
       expect(call[1].limit).toBe("10");
-      expect(call[1].subject_type).toBe("candidate");
+      expect(call[1].type).toBe("candidate");
       expect(result.isError).toBeFalsy();
     });
 
@@ -45,6 +45,7 @@ describe("custom-fields tools", () => {
       await client.callTool({
         name: "list_custom_fields",
         arguments: {
+          type: "job",
           sort_by: "updated_at",
           sort_order: "asc",
           updated_after: "2024-06-01T00:00:00Z",
@@ -57,10 +58,10 @@ describe("custom-fields tools", () => {
       expect(call[1].updated_after).toBe("2024-06-01T00:00:00Z");
     });
 
-    it("works with no params", async () => {
+    it("works with only required type param", async () => {
       (mockKula.get as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: [] });
 
-      const result = await client.callTool({ name: "list_custom_fields", arguments: {} });
+      const result = await client.callTool({ name: "list_custom_fields", arguments: { type: "candidate" } });
       expect(result.isError).toBeFalsy();
     });
 
@@ -69,7 +70,7 @@ describe("custom-fields tools", () => {
         new Error("Kula API error 500: Internal Server Error")
       );
 
-      const result = await client.callTool({ name: "list_custom_fields", arguments: {} });
+      const result = await client.callTool({ name: "list_custom_fields", arguments: { type: "job" } });
       expect(result.isError).toBe(true);
       const text = (result.content as Array<{ type: string; text: string }>)[0].text;
       expect(text).toContain("500");
@@ -77,7 +78,7 @@ describe("custom-fields tools", () => {
 
     it("handles non-Error throws", async () => {
       (mockKula.get as ReturnType<typeof vi.fn>).mockRejectedValueOnce("fail");
-      const result = await client.callTool({ name: "list_custom_fields", arguments: {} });
+      const result = await client.callTool({ name: "list_custom_fields", arguments: { type: "job" } });
       expect(result.isError).toBe(true);
     });
   });

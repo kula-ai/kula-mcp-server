@@ -23,7 +23,7 @@ export function register(server: McpServer, client: KulaClient) {
       try {
         const params: Record<string, string | boolean | undefined> = { page, limit, sort_by, sort_order, created_after, created_before, updated_after, updated_before };
         if (enabled !== undefined) params.enabled = enabled === "true";
-        const data = await client.get("/v1/sources", params);
+        const data = await client.get("/v1/candidate-sources", params);
         return {
           content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
         };

@@ -15,7 +15,7 @@ export function register(server: McpServer, client: KulaClient) {
         limit: z.string().optional().describe("Items per page (default: 20, max: 100)"),
         department_ids: z.string().optional().describe("Comma-separated department IDs to filter by (includes descendants)"),
         office_ids: z.string().optional().describe("Comma-separated office IDs to filter by"),
-        status: z.string().optional().describe("Comma-separated statuses to filter by: draft, published, closed, archived"),
+        status: z.string().optional().describe("Comma-separated statuses to filter by: draft, pending_approval, rejected, scheduled, published, closed, archived"),
         sort_by: z.enum(["created_at", "updated_at"]).optional().describe("Field to sort by (default: created_at)"),
         sort_order: z.enum(["asc", "desc"]).optional().describe("Sort direction (default: desc)"),
         created_after: z.string().optional().describe("Return jobs created on or after this ISO 8601 datetime"),

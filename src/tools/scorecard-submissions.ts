@@ -25,7 +25,7 @@ export function register(server: McpServer, client: KulaClient) {
         const params: Record<string, string | string[] | undefined> = { page, limit, sort_by, sort_order, created_after, created_before, updated_after, updated_before };
         if (status !== undefined) params.status = status.split(",").map((s) => s.trim());
         const data = await client.get(
-          `/v1/applications/${application_id}/scorecard-submissions`,
+          `/v1/applications/${application_id}/scorecards`,
           params
         );
         return {

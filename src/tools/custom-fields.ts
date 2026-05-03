@@ -6,12 +6,11 @@ export function register(server: McpServer, client: KulaClient) {
   server.registerTool(
     "list_custom_fields",
     {
-      description: "List custom fields configured in the organization, optionally filtered by subject type.",
+      description: "List custom fields configured in the organization. The type parameter is required — specify job, candidate, requisition, or offer.",
       inputSchema: {
-        subject_type: z
-          .string()
-          .optional()
-          .describe("Filter by subject type: job, candidate, or application"),
+        type: z
+          .enum(["job", "candidate", "requisition", "offer"])
+          .describe("Subject type to filter by: job, candidate, requisition, or offer"),
         page: z.string().optional().describe("Page number"),
         limit: z.string().optional().describe("Items per page"),
         sort_by: z.enum(["created_at", "updated_at"]).optional().describe("Field to sort by (default: created_at)"),
@@ -22,10 +21,10 @@ export function register(server: McpServer, client: KulaClient) {
         updated_before: z.string().optional().describe("Filter by updated date (ISO 8601, inclusive upper bound)"),
       },
     },
-    async ({ subject_type, page, limit, sort_by, sort_order, created_after, created_before, updated_after, updated_before }) => {
+    async ({ type, page, limit, sort_by, sort_order, created_after, created_before, updated_after, updated_before }) => {
       try {
         const data = await client.get("/v1/custom-fields", {
-          subject_type,
+          type,
           page,
           limit,
           sort_by,

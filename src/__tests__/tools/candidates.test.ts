@@ -76,7 +76,7 @@ describe("candidates tools", () => {
           skills: "skill1,skill2",
           job_id: "1",
           job_stage_id: "2",
-          source_id: "3",
+          candidate_source_id: "3",
           credited_to_user_id: "4",
           social_urls: [
             { kind: "linkedin", url: "https://linkedin.com/in/test" },
@@ -95,7 +95,7 @@ describe("candidates tools", () => {
         skills: "skill1,skill2",
         job_id: 1,
         job_stage_id: 2,
-        source_id: 3,
+        candidate_source_id: 3,
         credited_to_user_id: 4,
         social_urls: [
           { kind: "linkedin", url: "https://linkedin.com/in/test" },
@@ -116,7 +116,7 @@ describe("candidates tools", () => {
           first_name: "Test",
           job_id: "10",
           job_stage_id: "20",
-          source_id: "30",
+          candidate_source_id: "30",
           credited_to_user_id: "40",
         },
       });
@@ -125,7 +125,7 @@ describe("candidates tools", () => {
         first_name: "Test",
         job_id: 10,
         job_stage_id: 20,
-        source_id: 30,
+        candidate_source_id: 30,
         credited_to_user_id: 40,
       });
     });
@@ -194,18 +194,18 @@ describe("candidates tools", () => {
       expect(call[1].query).toBe("Jane");
     });
 
-    it("converts comma-separated skill_ids, tag_ids, source_ids, job_ids to number arrays", async () => {
+    it("converts comma-separated skill_ids, tag_ids, candidate_source_ids, job_ids to number arrays", async () => {
       (mockKula.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: [] });
 
       await client.callTool({
         name: "search_candidates",
-        arguments: { skill_ids: "1,2", tag_ids: "3", source_ids: "4", job_ids: "5,6" },
+        arguments: { skill_ids: "1,2", tag_ids: "3", candidate_source_ids: "4", job_ids: "5,6" },
       });
 
       const call = (mockKula.post as ReturnType<typeof vi.fn>).mock.calls.at(-1);
       expect(call[1].skill_ids).toEqual([1, 2]);
       expect(call[1].tag_ids).toEqual([3]);
-      expect(call[1].source_ids).toEqual([4]);
+      expect(call[1].candidate_source_ids).toEqual([4]);
       expect(call[1].job_ids).toEqual([5, 6]);
     });
 
@@ -285,13 +285,13 @@ describe("candidates tools", () => {
 
       const result = await client.callTool({
         name: "update_candidate",
-        arguments: { id: "cand-5", first_name: "Updated", title: "Engineer", source_id: "8" },
+        arguments: { id: "cand-5", first_name: "Updated", title: "Engineer", candidate_source_id: "8" },
       });
 
       expect(mockKula.patch).toHaveBeenCalledWith("/v1/candidates/cand-5", expect.objectContaining({
         first_name: "Updated",
         title: "Engineer",
-        source_id: 8,
+        candidate_source_id: 8,
       }));
       expect(result.isError).toBeFalsy();
     });

@@ -185,25 +185,4 @@ export function register(server: McpServer, client: KulaClient) {
     }
   );
 
-  server.registerTool(
-    "delete_application_note",
-    {
-      description: "Delete a note from an application.",
-      inputSchema: {
-        application_id: z.string().describe("Application ID"),
-        id: z.string().describe("Note ID"),
-      },
-    },
-    async ({ application_id, id }) => {
-      try {
-        await client.delete(`/v1/applications/${application_id}/notes/${id}`);
-        return { content: [{ type: "text", text: "Note deleted successfully." }] };
-      } catch (error) {
-        return {
-          content: [{ type: "text", text: `Error: ${error instanceof Error ? error.message : String(error)}` }],
-          isError: true,
-        };
-      }
-    }
-  );
 }

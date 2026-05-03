@@ -18,7 +18,7 @@ export function register(server: McpServer, client: KulaClient) {
         skills: z.string().optional().describe("Comma-separated skill names to attach"),
         job_id: z.string().optional().describe("Job ID to add this candidate to a pipeline"),
         job_stage_id: z.string().optional().describe("Stage ID within the job pipeline (use with job_id)"),
-        source_id: z.string().optional().describe("Source ID — get IDs from list_sources"),
+        candidate_source_id: z.string().optional().describe("Source ID — get IDs from list_sources"),
         credited_to_user_id: z.string().optional().describe("User ID to credit for this candidate"),
         social_urls: z
           .array(
@@ -49,7 +49,7 @@ export function register(server: McpServer, client: KulaClient) {
       skills,
       job_id,
       job_stage_id,
-      source_id,
+      candidate_source_id,
       credited_to_user_id,
       social_urls,
       location,
@@ -64,7 +64,7 @@ export function register(server: McpServer, client: KulaClient) {
         if (skills !== undefined) body.skills = skills;
         if (job_id !== undefined) body.job_id = Number(job_id);
         if (job_stage_id !== undefined) body.job_stage_id = Number(job_stage_id);
-        if (source_id !== undefined) body.source_id = Number(source_id);
+        if (candidate_source_id !== undefined) body.candidate_source_id = Number(candidate_source_id);
         if (credited_to_user_id !== undefined) body.credited_to_user_id = Number(credited_to_user_id);
         if (social_urls !== undefined) body.social_urls = social_urls;
         if (location !== undefined) {
@@ -164,17 +164,17 @@ export function register(server: McpServer, client: KulaClient) {
         query: z.string().optional().describe("Full-text search across name, email, phone number, and resume text"),
         skill_ids: z.string().optional().describe("Comma-separated skill IDs — returns candidates who have ALL of these skills"),
         tag_ids: z.string().optional().describe("Comma-separated tag IDs — returns candidates who have ANY of these tags"),
-        source_ids: z.string().optional().describe("Comma-separated source IDs — get IDs from list_sources"),
+        candidate_source_ids: z.string().optional().describe("Comma-separated source IDs — get IDs from list_sources"),
         job_ids: z.string().optional().describe("Comma-separated job IDs — returns candidates who have applied to these jobs"),
         has_resume: z.boolean().optional().describe("true = only candidates with a resume; false = only without"),
         country_id: z.string().optional().describe("Filter by country ID"),
         state_id: z.string().optional().describe("Filter by state/province ID"),
         city_id: z.string().optional().describe("Filter by city ID"),
         page: z.string().optional().describe("Page number (default: 1)"),
-        limit: z.enum(["20", "50", "100"]).optional().describe("Items per page — must be 20, 50, or 100 (default: 20)"),
+        limit: z.string().optional().describe("Items per page (default: 20, max: 100)"),
       },
     },
-    async ({ cursor, query, skill_ids, tag_ids, source_ids, job_ids, has_resume, country_id, state_id, city_id, page, limit }) => {
+    async ({ cursor, query, skill_ids, tag_ids, candidate_source_ids, job_ids, has_resume, country_id, state_id, city_id, page, limit }) => {
       try {
         const body: Record<string, unknown> = {};
         if (cursor !== undefined) body.cursor = cursor;
@@ -182,7 +182,7 @@ export function register(server: McpServer, client: KulaClient) {
         const toIds = (s: string) => s.split(",").map((v) => Number(v.trim())).filter((n) => !isNaN(n));
         if (skill_ids !== undefined) body.skill_ids = toIds(skill_ids);
         if (tag_ids !== undefined) body.tag_ids = toIds(tag_ids);
-        if (source_ids !== undefined) body.source_ids = toIds(source_ids);
+        if (candidate_source_ids !== undefined) body.candidate_source_ids = toIds(candidate_source_ids);
         if (job_ids !== undefined) body.job_ids = toIds(job_ids);
         if (has_resume !== undefined) body.has_resume = has_resume;
         if (country_id !== undefined) body.country_id = Number(country_id);
@@ -254,7 +254,7 @@ export function register(server: McpServer, client: KulaClient) {
         title: z.string().optional().describe("Candidate's current job title"),
         tags: z.string().optional().describe("Comma-separated tag names (replaces existing tags)"),
         skills: z.string().optional().describe("Comma-separated skill names (replaces existing skills)"),
-        source_id: z.string().optional().describe("Source ID — get IDs from list_sources"),
+        candidate_source_id: z.string().optional().describe("Source ID — get IDs from list_sources"),
         social_urls: z
           .array(
             z.object({
@@ -275,7 +275,7 @@ export function register(server: McpServer, client: KulaClient) {
         additional_info: z.record(z.unknown()).optional().describe("Custom field values as key-value pairs"),
       },
     },
-    async ({ id, first_name, last_name, email, phone_number, title, tags, skills, source_id, social_urls, location, additional_info }) => {
+    async ({ id, first_name, last_name, email, phone_number, title, tags, skills, candidate_source_id, social_urls, location, additional_info }) => {
       try {
         const body: Record<string, unknown> = {};
         if (first_name !== undefined) body.first_name = first_name;
@@ -285,7 +285,7 @@ export function register(server: McpServer, client: KulaClient) {
         if (title !== undefined) body.title = title;
         if (tags !== undefined) body.tags = tags;
         if (skills !== undefined) body.skills = skills;
-        if (source_id !== undefined) body.source_id = Number(source_id);
+        if (candidate_source_id !== undefined) body.candidate_source_id = Number(candidate_source_id);
         if (social_urls !== undefined) body.social_urls = social_urls;
         if (location !== undefined) {
           body.location = {

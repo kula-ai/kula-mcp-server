@@ -151,16 +151,6 @@ describe("applications tools", () => {
     });
   });
 
-  describe("delete_application_note", () => {
-    it("calls delete on correct endpoint", async () => {
-      (mockKula.delete as ReturnType<typeof vi.fn>).mockResolvedValueOnce(undefined);
-      const result = await client.callTool({ name: "delete_application_note", arguments: { application_id: "5", id: "n-1" } });
-      expect(mockKula.delete).toHaveBeenCalledWith("/v1/applications/5/notes/n-1");
-      const text = (result.content as Array<{ type: string; text: string }>)[0].text;
-      expect(text).toContain("deleted successfully");
-    });
-  });
-
   describe("error handling", () => {
     it("returns isError true when client throws", async () => {
       (mockKula.get as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
@@ -244,16 +234,5 @@ describe("applications tools", () => {
       expect(result.isError).toBe(true);
     });
 
-    it("handles errors in delete_application_note", async () => {
-      (mockKula.delete as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("fail"));
-      const result = await client.callTool({ name: "delete_application_note", arguments: { application_id: "5", id: "n-1" } });
-      expect(result.isError).toBe(true);
-    });
-
-    it("handles non-Error throws in delete_application_note", async () => {
-      (mockKula.delete as ReturnType<typeof vi.fn>).mockRejectedValueOnce("string error");
-      const result = await client.callTool({ name: "delete_application_note", arguments: { application_id: "5", id: "n-1" } });
-      expect(result.isError).toBe(true);
-    });
   });
 });
