@@ -31,17 +31,11 @@ describe("jobs tools", () => {
         arguments: { page: "1", limit: "10", status: "published" },
       });
 
-      expect(mockKula.get).toHaveBeenCalledWith("/v1/jobs", {
+      expect(mockKula.get).toHaveBeenCalledWith("/v1/jobs", expect.objectContaining({
         page: "1",
         limit: "10",
         status: ["published"],
-        sort_by: undefined,
-        sort_order: undefined,
-        created_after: undefined,
-        created_before: undefined,
-        updated_after: undefined,
-        updated_before: undefined,
-      });
+      }));
       expect(result.isError).toBeFalsy();
     });
 
@@ -68,6 +62,19 @@ describe("jobs tools", () => {
       const call = (mockKula.get as ReturnType<typeof vi.fn>).mock.calls.at(-1);
       expect(call[1].department_ids).toEqual([3, 4]);
       expect(call[1].office_ids).toEqual([10, 11]);
+    });
+
+    it("passes employment_types and workplace as string arrays", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: [] });
+
+      await client.callTool({
+        name: "list_jobs",
+        arguments: { employment_types: "full_time,contract", workplace: "remote" },
+      });
+
+      const call = (mockKula.get as ReturnType<typeof vi.fn>).mock.calls.at(-1);
+      expect(call[1].employment_types).toEqual(["full_time", "contract"]);
+      expect(call[1].workplace).toEqual(["remote"]);
     });
   });
 
@@ -103,6 +110,30 @@ describe("jobs tools", () => {
       const call = (mockKula.post as ReturnType<typeof vi.fn>).mock.calls.at(-1);
       expect(call[1].department_ids).toEqual([3, 4]);
       expect(call[1].office_ids).toEqual([10, 11]);
+    });
+
+    it("passes employment_types, workplace, confidential, job_post_listed, recruiter/hiring manager IDs", async () => {
+      (mockKula.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: [] });
+
+      await client.callTool({
+        name: "search_jobs",
+        arguments: {
+          employment_types: "full_time,part_time",
+          workplace: "remote,hybrid",
+          confidential: true,
+          job_post_listed: false,
+          primary_recruiter_ids: "1,2",
+          primary_hiring_manager_ids: "3",
+        },
+      });
+
+      const call = (mockKula.post as ReturnType<typeof vi.fn>).mock.calls.at(-1);
+      expect(call[1].employment_types).toEqual(["full_time", "part_time"]);
+      expect(call[1].workplace).toEqual(["remote", "hybrid"]);
+      expect(call[1].confidential).toBe(true);
+      expect(call[1].job_post_listed).toBe(false);
+      expect(call[1].primary_recruiter_ids).toEqual([1, 2]);
+      expect(call[1].primary_hiring_manager_ids).toEqual([3]);
     });
 
     it("splits status and passes page and limit when provided", async () => {

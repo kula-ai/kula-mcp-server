@@ -170,11 +170,16 @@ export function register(server: McpServer, client: KulaClient) {
         country_id: z.string().optional().describe("Filter by country ID"),
         state_id: z.string().optional().describe("Filter by state/province ID"),
         city_id: z.string().optional().describe("Filter by city ID"),
+        credited_to_user_ids: z.string().optional().describe("Comma-separated user IDs — returns candidates credited to these users"),
+        current_company_ids: z.string().optional().describe("Comma-separated company IDs — returns candidates currently at these companies"),
+        degree_ids: z.string().optional().describe("Comma-separated degree IDs — returns candidates with these degrees"),
+        institute_ids: z.string().optional().describe("Comma-separated institute IDs — returns candidates from these institutions"),
+        interviewer_ids: z.string().optional().describe("Comma-separated user IDs — returns candidates interviewed by these users"),
         page: z.string().optional().describe("Page number (default: 1)"),
         limit: z.string().optional().describe("Items per page (default: 20, max: 100)"),
       },
     },
-    async ({ cursor, query, skill_ids, tag_ids, candidate_source_ids, job_ids, has_resume, country_id, state_id, city_id, page, limit }) => {
+    async ({ cursor, query, skill_ids, tag_ids, candidate_source_ids, job_ids, has_resume, country_id, state_id, city_id, credited_to_user_ids, current_company_ids, degree_ids, institute_ids, interviewer_ids, page, limit }) => {
       try {
         const body: Record<string, unknown> = {};
         if (cursor !== undefined) body.cursor = cursor;
@@ -188,6 +193,11 @@ export function register(server: McpServer, client: KulaClient) {
         if (country_id !== undefined) body.country_id = Number(country_id);
         if (state_id !== undefined) body.state_id = Number(state_id);
         if (city_id !== undefined) body.city_id = Number(city_id);
+        if (credited_to_user_ids !== undefined) body.credited_to_user_ids = toIds(credited_to_user_ids);
+        if (current_company_ids !== undefined) body.current_company_ids = toIds(current_company_ids);
+        if (degree_ids !== undefined) body.degree_ids = toIds(degree_ids);
+        if (institute_ids !== undefined) body.institute_ids = toIds(institute_ids);
+        if (interviewer_ids !== undefined) body.interviewer_ids = toIds(interviewer_ids);
         if (page !== undefined) body.page = Number(page);
         if (limit !== undefined) body.limit = Number(limit);
 

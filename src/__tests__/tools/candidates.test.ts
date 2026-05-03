@@ -232,6 +232,28 @@ describe("candidates tools", () => {
       expect(call[1].city_id).toBe(30);
     });
 
+    it("converts credited_to_user_ids, current_company_ids, degree_ids, institute_ids, interviewer_ids to number arrays", async () => {
+      (mockKula.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: [] });
+
+      await client.callTool({
+        name: "search_candidates",
+        arguments: {
+          credited_to_user_ids: "1,2",
+          current_company_ids: "10",
+          degree_ids: "5,6",
+          institute_ids: "7",
+          interviewer_ids: "3,4",
+        },
+      });
+
+      const call = (mockKula.post as ReturnType<typeof vi.fn>).mock.calls.at(-1);
+      expect(call[1].credited_to_user_ids).toEqual([1, 2]);
+      expect(call[1].current_company_ids).toEqual([10]);
+      expect(call[1].degree_ids).toEqual([5, 6]);
+      expect(call[1].institute_ids).toEqual([7]);
+      expect(call[1].interviewer_ids).toEqual([3, 4]);
+    });
+
     it("passes cursor and converts limit to number", async () => {
       (mockKula.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: [] });
 
