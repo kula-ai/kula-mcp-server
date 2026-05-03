@@ -11,8 +11,6 @@ import { register as registerWebhooks } from "./tools/webhooks.js";
 import { register as registerAutocomplete } from "./tools/autocomplete.js";
 import { register as registerOrganization } from "./tools/organization.js";
 import { register as registerRequisitions } from "./tools/requisitions.js";
-import { register as registerSources } from "./tools/sources.js";
-import { register as registerRejectionReasons } from "./tools/rejection-reasons.js";
 import { register as registerScorecardSubmissions } from "./tools/scorecard-submissions.js";
 import { register as registerJobStages } from "./tools/job-stages.js";
 
@@ -41,8 +39,6 @@ registerWebhooks(server, client);
 registerAutocomplete(server, client);
 registerOrganization(server, client);
 registerRequisitions(server, client);
-registerSources(server, client);
-registerRejectionReasons(server, client);
 registerScorecardSubmissions(server, client);
 registerJobStages(server, client);
 
