@@ -254,18 +254,25 @@ describe("candidates tools", () => {
       expect(call[1].interviewer_ids).toEqual([3, 4]);
     });
 
-    it("passes cursor and converts limit to number", async () => {
+    it("passes cursor and limit to client", async () => {
       (mockKula.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: [] });
 
       await client.callTool({
         name: "search_candidates",
-        arguments: { cursor: "tok_abc123", limit: "50", page: "2" },
+        arguments: { cursor: "tok_abc123", limit: "50" },
       });
 
       const call = (mockKula.post as ReturnType<typeof vi.fn>).mock.calls.at(-1);
       expect(call[1].cursor).toBe("tok_abc123");
       expect(call[1].limit).toBe(50);
-      expect(call[1].page).toBe(2);
+    });
+
+    it("returns isError when cursor and page are both provided", async () => {
+      const result = await client.callTool({
+        name: "search_candidates",
+        arguments: { cursor: "tok_abc123", page: "2" },
+      });
+      expect(result.isError).toBe(true);
     });
 
     it("returns isError true on failure", async () => {

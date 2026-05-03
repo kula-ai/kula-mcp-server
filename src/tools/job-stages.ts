@@ -9,11 +9,13 @@ export function register(server: McpServer, client: KulaClient) {
       description: "List all pipeline stages for a specific job.",
       inputSchema: {
         job_id: z.string().describe("Job ID"),
+        page: z.string().optional().describe("Page number"),
+        limit: z.string().optional().describe("Items per page"),
       },
     },
-    async ({ job_id }) => {
+    async ({ job_id, page, limit }) => {
       try {
-        const data = await client.get(`/v1/jobs/${job_id}/stages`);
+        const data = await client.get(`/v1/jobs/${job_id}/stages`, { page, limit });
         return {
           content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
         };

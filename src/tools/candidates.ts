@@ -159,7 +159,8 @@ export function register(server: McpServer, client: KulaClient) {
           .optional()
           .describe(
             "Pagination cursor from the previous response meta.next_cursor. " +
-            "Omit this field entirely when changing any filter — cursors are bound to a specific search context."
+            "Omit this field entirely when changing any filter — cursors are bound to a specific search context. " +
+            "Cannot be combined with page."
           ),
         query: z.string().optional().describe("Full-text search across name, email, phone number, and resume text"),
         skill_ids: z.string().optional().describe("Comma-separated skill IDs — returns candidates who have ALL of these skills"),
@@ -175,11 +176,17 @@ export function register(server: McpServer, client: KulaClient) {
         degree_ids: z.string().optional().describe("Comma-separated degree IDs — returns candidates with these degrees"),
         institute_ids: z.string().optional().describe("Comma-separated institute IDs — returns candidates from these institutions"),
         interviewer_ids: z.string().optional().describe("Comma-separated user IDs — returns candidates interviewed by these users"),
-        page: z.string().optional().describe("Page number (default: 1)"),
+        page: z.string().optional().describe("Page number (default: 1). Cannot be combined with cursor."),
         limit: z.string().optional().describe("Items per page (default: 20, max: 100)"),
       },
     },
     async ({ cursor, query, skill_ids, tag_ids, candidate_source_ids, job_ids, has_resume, country_id, state_id, city_id, credited_to_user_ids, current_company_ids, degree_ids, institute_ids, interviewer_ids, page, limit }) => {
+      if (cursor !== undefined && page !== undefined) {
+        return {
+          content: [{ type: "text", text: "Error: cursor and page are mutually exclusive — omit cursor when using page-based pagination" }],
+          isError: true,
+        };
+      }
       try {
         const body: Record<string, unknown> = {};
         if (cursor !== undefined) body.cursor = cursor;

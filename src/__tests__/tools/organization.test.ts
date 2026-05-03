@@ -40,12 +40,12 @@ describe("organization tools", () => {
 
       await client.callTool({
         name: "list_milestones",
-        arguments: { page: "2", limit: "10", sort_by: "name", sort_order: "asc", created_after: "2024-01-01T00:00:00Z" },
+        arguments: { page: "2", limit: "10", sort_by: "created_at", sort_order: "asc", created_after: "2024-01-01T00:00:00Z" },
       });
 
       const call = (mockKula.get as ReturnType<typeof vi.fn>).mock.calls.at(-1);
       expect(call[1].page).toBe("2");
-      expect(call[1].sort_by).toBe("name");
+      expect(call[1].sort_by).toBe("created_at");
       expect(call[1].created_after).toBe("2024-01-01T00:00:00Z");
     });
 
@@ -73,7 +73,7 @@ describe("organization tools", () => {
         arguments: {},
       });
 
-      expect(mockKula.get).toHaveBeenCalledWith("/v1/departments");
+      expect(mockKula.get).toHaveBeenCalledWith("/v1/departments", expect.any(Object));
 
       const text = (result.content as Array<{ type: string; text: string }>)[0]
         .text;
@@ -92,7 +92,7 @@ describe("organization tools", () => {
         arguments: {},
       });
 
-      expect(mockKula.get).toHaveBeenCalledWith("/v1/offices");
+      expect(mockKula.get).toHaveBeenCalledWith("/v1/offices", expect.any(Object));
 
       const text = (result.content as Array<{ type: string; text: string }>)[0]
         .text;
@@ -117,12 +117,12 @@ describe("organization tools", () => {
 
       await client.callTool({
         name: "list_users",
-        arguments: { sort_by: "name", sort_order: "asc", updated_after: "2024-01-01T00:00:00Z" },
+        arguments: { sort_by: "updated_at", sort_order: "asc", updated_after: "2024-01-01T00:00:00Z" },
       });
 
       const call = (mockKula.get as ReturnType<typeof vi.fn>).mock.calls.at(-1);
       expect(call[0]).toBe("/v1/users");
-      expect(call[1].sort_by).toBe("name");
+      expect(call[1].sort_by).toBe("updated_at");
       expect(call[1].sort_order).toBe("asc");
       expect(call[1].updated_after).toBe("2024-01-01T00:00:00Z");
     });

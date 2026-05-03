@@ -7,11 +7,14 @@ export function register(server: McpServer, client: KulaClient) {
     "list_departments",
     {
       description: "List all departments in the organization as a nested tree structure.",
-      inputSchema: {},
+      inputSchema: {
+        page: z.string().optional().describe("Page number"),
+        limit: z.string().optional().describe("Items per page"),
+      },
     },
-    async () => {
+    async ({ page, limit }) => {
       try {
-        const data = await client.get("/v1/departments");
+        const data = await client.get("/v1/departments", { page, limit });
         return {
           content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
         };
@@ -33,11 +36,14 @@ export function register(server: McpServer, client: KulaClient) {
     "list_offices",
     {
       description: "List all offices in the organization.",
-      inputSchema: {},
+      inputSchema: {
+        page: z.string().optional().describe("Page number"),
+        limit: z.string().optional().describe("Items per page"),
+      },
     },
-    async () => {
+    async ({ page, limit }) => {
       try {
-        const data = await client.get("/v1/offices");
+        const data = await client.get("/v1/offices", { page, limit });
         return {
           content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
         };
@@ -62,7 +68,7 @@ export function register(server: McpServer, client: KulaClient) {
       inputSchema: {
         page: z.string().optional().describe("Page number"),
         limit: z.string().optional().describe("Items per page"),
-        sort_by: z.string().optional().describe("Field to sort by"),
+        sort_by: z.enum(["created_at", "updated_at"]).optional().describe("Field to sort by (default: created_at)"),
         sort_order: z.enum(["asc", "desc"]).optional().describe("Sort direction"),
         created_after: z.string().optional().describe("Filter by created date (ISO 8601, inclusive lower bound)"),
         created_before: z.string().optional().describe("Filter by created date (ISO 8601, inclusive upper bound)"),
@@ -152,7 +158,7 @@ export function register(server: McpServer, client: KulaClient) {
         created_before: z.string().optional().describe("Filter by created date (ISO 8601, inclusive upper bound)"),
         updated_after: z.string().optional().describe("Filter by updated date (ISO 8601, inclusive lower bound)"),
         updated_before: z.string().optional().describe("Filter by updated date (ISO 8601, inclusive upper bound)"),
-        enabled: z.string().optional().describe("Filter by enabled status: true or false"),
+        enabled: z.enum(["true", "false"]).optional().describe("Filter by enabled status"),
         group: z.string().optional().describe("Filter by rejection reason group"),
       },
     },
@@ -185,7 +191,7 @@ export function register(server: McpServer, client: KulaClient) {
       inputSchema: {
         page: z.string().optional().describe("Page number"),
         limit: z.string().optional().describe("Items per page"),
-        enabled: z.string().optional().describe("Filter by enabled status: true or false"),
+        enabled: z.enum(["true", "false"]).optional().describe("Filter by enabled status"),
         sort_by: z.enum(["created_at", "updated_at"]).optional().describe("Field to sort by (default: created_at)"),
         sort_order: z.enum(["asc", "desc"]).optional().describe("Sort direction (default: desc)"),
         created_after: z.string().optional().describe("Filter by created date (ISO 8601, inclusive lower bound)"),
@@ -223,7 +229,7 @@ export function register(server: McpServer, client: KulaClient) {
       inputSchema: {
         page: z.string().optional().describe("Page number"),
         limit: z.string().optional().describe("Items per page"),
-        sort_by: z.string().optional().describe("Field to sort by"),
+        sort_by: z.enum(["created_at", "updated_at"]).optional().describe("Field to sort by (default: created_at)"),
         sort_order: z.enum(["asc", "desc"]).optional().describe("Sort direction"),
         created_after: z.string().optional().describe("Filter by created date (ISO 8601, inclusive lower bound)"),
         created_before: z.string().optional().describe("Filter by created date (ISO 8601, inclusive upper bound)"),
