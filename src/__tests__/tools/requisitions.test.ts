@@ -137,12 +137,12 @@ describe("requisitions tools", () => {
 
       const result = await client.callTool({
         name: "list_requisition_fields",
-        arguments: { department_id: "dept-1", office_ids: "off-1,off-2" },
+        arguments: { department_id: "dept-1", office_ids: "10,11" },
       });
 
       expect(mockKula.get).toHaveBeenCalledWith("/v1/requisitions/fields", {
         department_id: "dept-1",
-        office_ids: "off-1,off-2",
+        office_ids: [10, 11],
       });
       expect(result.isError).toBeFalsy();
     });

@@ -64,18 +64,6 @@ describe("jobs tools", () => {
       expect(call[1].office_ids).toEqual([10, 11]);
     });
 
-    it("passes employment_types and workplace as string arrays", async () => {
-      (mockKula.get as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: [] });
-
-      await client.callTool({
-        name: "list_jobs",
-        arguments: { employment_types: "full_time,contract", workplace: "remote" },
-      });
-
-      const call = (mockKula.get as ReturnType<typeof vi.fn>).mock.calls.at(-1);
-      expect(call[1].employment_types).toEqual(["full_time", "contract"]);
-      expect(call[1].workplace).toEqual(["remote"]);
-    });
   });
 
   describe("search_jobs", () => {

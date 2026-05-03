@@ -75,7 +75,7 @@ Get your API key from [Kula Developer Settings](https://developers.kula.ai).
 
 ## Available Tools
 
-53 tools across 13 categories:
+51 tools across 13 categories:
 
 <details>
 <summary>Organization (4 tools)</summary>
@@ -162,7 +162,7 @@ Get your API key from [Kula Developer Settings](https://developers.kula.ai).
 </details>
 
 <details>
-<summary>Applications (7 tools)</summary>
+<summary>Applications (6 tools)</summary>
 
 | Tool | Description |
 |------|-------------|
@@ -172,7 +172,6 @@ Get your API key from [Kula Developer Settings](https://developers.kula.ai).
 | `list_application_notes` | List notes on a specific application |
 | `create_application_note` | Add a note to a specific application |
 | `update_application_note` | Update an existing note on an application |
-| `delete_application_note` | Delete a note from an application |
 
 </details>
 
@@ -186,7 +185,7 @@ Get your API key from [Kula Developer Settings](https://developers.kula.ai).
 </details>
 
 <details>
-<summary>Webhooks (13 tools)</summary>
+<summary>Webhooks (12 tools)</summary>
 
 | Tool | Description |
 |------|-------------|
@@ -199,7 +198,6 @@ Get your API key from [Kula Developer Settings](https://developers.kula.ai).
 | `disable_webhook` | Disable an active webhook |
 | `rotate_webhook_secret` | Rotate the signing secret for a webhook |
 | `test_webhook` | Send a test payload to a webhook endpoint |
-| `get_webhook_test_status` | Get the delivery status of a webhook test |
 | `list_webhook_logs` | List recent delivery logs for a webhook |
 | `list_webhook_events` | List all available webhook event types |
 | `get_webhook_sample_payload` | Get a sample webhook payload for a specific event type |

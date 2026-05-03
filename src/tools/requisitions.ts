@@ -112,7 +112,7 @@ export function register(server: McpServer, client: KulaClient) {
       try {
         const data = await client.get("/v1/requisitions/fields", {
           department_id,
-          office_ids,
+          ...(office_ids !== undefined && { office_ids: office_ids.split(",").map((s) => Number(s.trim())) }),
         });
         return {
           content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
