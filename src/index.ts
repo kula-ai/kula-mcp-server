@@ -13,7 +13,6 @@ import { register as registerOrganization } from "./tools/organization.js";
 import { register as registerRequisitions } from "./tools/requisitions.js";
 import { register as registerSources } from "./tools/sources.js";
 import { register as registerRejectionReasons } from "./tools/rejection-reasons.js";
-import { register as registerCustomFields } from "./tools/custom-fields.js";
 import { register as registerScorecardSubmissions } from "./tools/scorecard-submissions.js";
 import { register as registerJobStages } from "./tools/job-stages.js";
 
@@ -44,7 +43,6 @@ registerOrganization(server, client);
 registerRequisitions(server, client);
 registerSources(server, client);
 registerRejectionReasons(server, client);
-registerCustomFields(server, client);
 registerScorecardSubmissions(server, client);
 registerJobStages(server, client);
 
