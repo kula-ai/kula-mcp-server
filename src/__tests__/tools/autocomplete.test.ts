@@ -32,7 +32,7 @@ describe("autocomplete tools", () => {
       });
 
       expect(mockKula.get).toHaveBeenCalledWith(
-        "/v1/autocomplete/companies",
+        "/v1/job-boards/autocomplete/companies",
         { q: "acme" }
       );
 
@@ -54,7 +54,7 @@ describe("autocomplete tools", () => {
       });
 
       expect(mockKula.get).toHaveBeenCalledWith(
-        "/v1/autocomplete/industries"
+        "/v1/job-boards/autocomplete/industries"
       );
       expect(result.isError).toBeFalsy();
     });
@@ -72,7 +72,7 @@ describe("autocomplete tools", () => {
       });
 
       expect(mockKula.get).toHaveBeenCalledWith(
-        "/v1/autocomplete/locations",
+        "/v1/job-boards/autocomplete/locations",
         { q: "san fran" }
       );
 
@@ -94,7 +94,7 @@ describe("autocomplete tools", () => {
       });
 
       expect(mockKula.get).toHaveBeenCalledWith(
-        "/v1/autocomplete/institutions",
+        "/v1/job-boards/autocomplete/institutions",
         { q: "mit" }
       );
 
@@ -116,7 +116,7 @@ describe("autocomplete tools", () => {
       });
 
       expect(mockKula.get).toHaveBeenCalledWith(
-        "/v1/autocomplete/disciplines",
+        "/v1/job-boards/autocomplete/disciplines",
         { q: "comp" }
       );
 
@@ -138,7 +138,7 @@ describe("autocomplete tools", () => {
       });
 
       expect(mockKula.get).toHaveBeenCalledWith(
-        "/v1/autocomplete/degrees"
+        "/v1/job-boards/autocomplete/degrees"
       );
       expect(result.isError).toBeFalsy();
     });

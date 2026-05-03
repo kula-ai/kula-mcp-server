@@ -140,13 +140,13 @@ export function register(server: McpServer, client: KulaClient) {
       inputSchema: {
         application_id: z.string().describe("Application ID"),
         body: z.string().describe("Note content"),
-        notify_recruiter: z.string().optional().describe("Whether to notify the recruiter: true or false"),
+        notify_recruiter: z.boolean().optional().describe("When true, auto-tags the job's primary recruiter in the note"),
       },
     },
     async ({ application_id, body, notify_recruiter }) => {
       try {
         const payload: Record<string, unknown> = { body };
-        if (notify_recruiter !== undefined) payload.notify_recruiter = notify_recruiter === "true";
+        if (notify_recruiter !== undefined) payload.notify_recruiter = notify_recruiter;
         const data = await client.post(`/v1/applications/${application_id}/notes`, payload);
         return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
       } catch (error) {
@@ -166,14 +166,14 @@ export function register(server: McpServer, client: KulaClient) {
         application_id: z.string().describe("Application ID"),
         id: z.string().describe("Note ID"),
         body: z.string().optional().describe("Updated note content"),
-        notify_recruiter: z.string().optional().describe("Whether to notify the recruiter: true or false"),
+        notify_recruiter: z.boolean().optional().describe("When true, auto-tags the job's primary recruiter in the note"),
       },
     },
     async ({ application_id, id, body, notify_recruiter }) => {
       try {
         const payload: Record<string, unknown> = {};
         if (body !== undefined) payload.body = body;
-        if (notify_recruiter !== undefined) payload.notify_recruiter = notify_recruiter === "true";
+        if (notify_recruiter !== undefined) payload.notify_recruiter = notify_recruiter;
         const data = await client.patch(`/v1/applications/${application_id}/notes/${id}`, payload);
         return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
       } catch (error) {

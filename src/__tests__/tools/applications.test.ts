@@ -129,9 +129,9 @@ describe("applications tools", () => {
       expect(mockKula.post).toHaveBeenCalledWith("/v1/applications/5/notes", { body: "Great candidate" });
     });
 
-    it("converts notify_recruiter string to boolean", async () => {
+    it("passes notify_recruiter boolean to client", async () => {
       (mockKula.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ id: "n-1" });
-      await client.callTool({ name: "create_application_note", arguments: { application_id: "5", body: "Note", notify_recruiter: "true" } });
+      await client.callTool({ name: "create_application_note", arguments: { application_id: "5", body: "Note", notify_recruiter: true } });
       const call = (mockKula.post as ReturnType<typeof vi.fn>).mock.calls.at(-1);
       expect(call[1].notify_recruiter).toBe(true);
     });
@@ -144,9 +144,9 @@ describe("applications tools", () => {
       expect(mockKula.patch).toHaveBeenCalledWith("/v1/applications/5/notes/n-1", { body: "Updated" });
     });
 
-    it("includes notify_recruiter when provided", async () => {
+    it("passes notify_recruiter boolean to client", async () => {
       (mockKula.patch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ id: "n-1" });
-      await client.callTool({ name: "update_application_note", arguments: { application_id: "5", id: "n-1", notify_recruiter: "true" } });
+      await client.callTool({ name: "update_application_note", arguments: { application_id: "5", id: "n-1", notify_recruiter: true } });
       expect(mockKula.patch).toHaveBeenCalledWith("/v1/applications/5/notes/n-1", { notify_recruiter: true });
     });
   });

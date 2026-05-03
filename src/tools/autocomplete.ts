@@ -13,7 +13,7 @@ export function register(server: McpServer, client: KulaClient) {
     },
     async ({ query }) => {
       try {
-        const data = await client.get("/v1/autocomplete/companies", {
+        const data = await client.get("/v1/job-boards/autocomplete/companies", {
           q: query,
         });
         return {
@@ -41,7 +41,7 @@ export function register(server: McpServer, client: KulaClient) {
     },
     async () => {
       try {
-        const data = await client.get("/v1/autocomplete/industries");
+        const data = await client.get("/v1/job-boards/autocomplete/industries");
         return {
           content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
         };
@@ -69,7 +69,7 @@ export function register(server: McpServer, client: KulaClient) {
     },
     async ({ query }) => {
       try {
-        const data = await client.get("/v1/autocomplete/locations", {
+        const data = await client.get("/v1/job-boards/autocomplete/locations", {
           q: query,
         });
         return {
@@ -99,7 +99,7 @@ export function register(server: McpServer, client: KulaClient) {
     },
     async ({ query }) => {
       try {
-        const data = await client.get("/v1/autocomplete/institutions", {
+        const data = await client.get("/v1/job-boards/autocomplete/institutions", {
           q: query,
         });
         return {
@@ -129,7 +129,7 @@ export function register(server: McpServer, client: KulaClient) {
     },
     async ({ query }) => {
       try {
-        const data = await client.get("/v1/autocomplete/disciplines", {
+        const data = await client.get("/v1/job-boards/autocomplete/disciplines", {
           q: query,
         });
         return {
@@ -157,7 +157,7 @@ export function register(server: McpServer, client: KulaClient) {
     },
     async () => {
       try {
-        const data = await client.get("/v1/autocomplete/degrees");
+        const data = await client.get("/v1/job-boards/autocomplete/degrees");
         return {
           content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
         };
