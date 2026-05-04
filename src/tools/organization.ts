@@ -6,15 +6,21 @@ export function register(server: McpServer, client: KulaClient) {
   server.registerTool(
     "list_departments",
     {
-      description: "List all departments in the organization as a nested tree structure.",
+      description: "List all departments as a flat paginated list. Each record has a parent_id to reconstruct the hierarchy client-side.",
       inputSchema: {
         page: z.string().optional().describe("Page number"),
         limit: z.string().optional().describe("Items per page"),
+        sort_by: z.enum(["created_at", "updated_at"]).optional().describe("Field to sort by (default: created_at)"),
+        sort_order: z.enum(["asc", "desc"]).optional().describe("Sort direction (default: desc)"),
+        created_after: z.string().optional().describe("ISO 8601 datetime lower bound on created_at"),
+        created_before: z.string().optional().describe("ISO 8601 datetime upper bound on created_at"),
+        updated_after: z.string().optional().describe("ISO 8601 datetime lower bound on updated_at"),
+        updated_before: z.string().optional().describe("ISO 8601 datetime upper bound on updated_at"),
       },
     },
-    async ({ page, limit }) => {
+    async ({ page, limit, sort_by, sort_order, created_after, created_before, updated_after, updated_before }) => {
       try {
-        const data = await client.get("/v1/departments", { page, limit });
+        const data = await client.get("/v1/departments", { page, limit, sort_by, sort_order, created_after, created_before, updated_after, updated_before });
         return {
           content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
         };
@@ -119,21 +125,16 @@ export function register(server: McpServer, client: KulaClient) {
         created_before: z.string().optional().describe("Filter by created date (ISO 8601, inclusive upper bound)"),
         updated_after: z.string().optional().describe("Filter by updated date (ISO 8601, inclusive lower bound)"),
         updated_before: z.string().optional().describe("Filter by updated date (ISO 8601, inclusive upper bound)"),
+        department_id: z.string().optional().describe("Filter by department ID — returns fields that apply to this department and fields with no department restriction"),
+        office_ids: z.string().optional().describe("Comma-separated office IDs — returns fields that apply to any of these offices and fields with no office restriction"),
       },
     },
-    async ({ type, page, limit, sort_by, sort_order, created_after, created_before, updated_after, updated_before }) => {
+    async ({ type, page, limit, sort_by, sort_order, created_after, created_before, updated_after, updated_before, department_id, office_ids }) => {
       try {
-        const data = await client.get("/v1/custom-fields", {
-          type,
-          page,
-          limit,
-          sort_by,
-          sort_order,
-          created_after,
-          created_before,
-          updated_after,
-          updated_before,
-        });
+        const params: Record<string, string | number | boolean | string[] | number[] | undefined> = { type, page, limit, sort_by, sort_order, created_after, created_before, updated_after, updated_before };
+        if (department_id !== undefined) params.department_id = Number(department_id);
+        if (office_ids !== undefined) params["office_ids[]"] = office_ids.split(",").map(Number);
+        const data = await client.get("/v1/custom-fields", params);
         return {
           content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
         };
