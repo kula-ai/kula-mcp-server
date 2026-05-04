@@ -39,11 +39,17 @@ export function register(server: McpServer, client: KulaClient) {
       inputSchema: {
         page: z.string().optional().describe("Page number"),
         limit: z.string().optional().describe("Items per page"),
+        sort_by: z.enum(["created_at", "updated_at"]).optional().describe("Field to sort by (default: created_at)"),
+        sort_order: z.enum(["asc", "desc"]).optional().describe("Sort direction (default: desc)"),
+        created_after: z.string().optional().describe("ISO 8601 datetime lower bound on created_at"),
+        created_before: z.string().optional().describe("ISO 8601 datetime upper bound on created_at"),
+        updated_after: z.string().optional().describe("ISO 8601 datetime lower bound on updated_at"),
+        updated_before: z.string().optional().describe("ISO 8601 datetime upper bound on updated_at"),
       },
     },
-    async ({ page, limit }) => {
+    async ({ page, limit, sort_by, sort_order, created_after, created_before, updated_after, updated_before }) => {
       try {
-        const data = await client.get("/v1/offices", { page, limit });
+        const data = await client.get("/v1/offices", { page, limit, sort_by, sort_order, created_after, created_before, updated_after, updated_before });
         return {
           content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
         };
