@@ -112,7 +112,7 @@ Get your API key from [Kula Developer Settings](https://developers.kula.ai).
 
 | Tool | Description |
 |------|-------------|
-| `list_custom_fields` | List custom fields, optionally filtered by subject type (candidate, application, job) |
+| `list_custom_fields` | List custom fields by subject type. Required — valid values: `job`, `candidate`, `requisition`, `offer` |
 
 </details>
 
