@@ -127,6 +127,18 @@ describe("organization tools", () => {
       expect(call[1].updated_after).toBe("2024-01-01T00:00:00Z");
     });
 
+    it("passes status filter as array", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: [] });
+
+      await client.callTool({
+        name: "list_users",
+        arguments: { status: "active,deactivated" },
+      });
+
+      const call = (mockKula.get as ReturnType<typeof vi.fn>).mock.calls.at(-1);
+      expect(call[1]["status[]"]).toEqual(["active", "deactivated"]);
+    });
+
     it("returns isError true on failure", async () => {
       (mockKula.get as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("fail"));
       const result = await client.callTool({ name: "list_users", arguments: {} });
@@ -308,6 +320,19 @@ describe("organization tools", () => {
 
       const result = await client.callTool({ name: "list_custom_fields", arguments: { type: "candidate" } });
       expect(result.isError).toBeFalsy();
+    });
+
+    it("passes department_ids and office_ids as array params", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: [] });
+
+      await client.callTool({
+        name: "list_custom_fields",
+        arguments: { type: "job", department_ids: "1,2", office_ids: "10" },
+      });
+
+      const call = (mockKula.get as ReturnType<typeof vi.fn>).mock.calls.at(-1);
+      expect(call[1]["department_ids[]"]).toEqual([1, 2]);
+      expect(call[1]["office_ids[]"]).toEqual([10]);
     });
 
     it("returns isError true on Error failure", async () => {
