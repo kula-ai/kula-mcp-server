@@ -11,6 +11,8 @@ import { register as registerWebhooks } from "./tools/webhooks.js";
 import { register as registerAutocomplete } from "./tools/autocomplete.js";
 import { register as registerOrganization } from "./tools/organization.js";
 import { register as registerRequisitions } from "./tools/requisitions.js";
+import { register as registerScorecardSubmissions } from "./tools/scorecard-submissions.js";
+import { register as registerJobStages } from "./tools/job-stages.js";
 
 const apiKey = process.env.KULA_API_KEY;
 if (!apiKey) {
@@ -37,6 +39,8 @@ registerWebhooks(server, client);
 registerAutocomplete(server, client);
 registerOrganization(server, client);
 registerRequisitions(server, client);
+registerScorecardSubmissions(server, client);
+registerJobStages(server, client);
 
 // Start the server with STDIO transport
 const transport = new StdioServerTransport();

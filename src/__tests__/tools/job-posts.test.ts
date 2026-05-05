@@ -21,21 +21,22 @@ describe("job-posts tools", () => {
   });
 
   describe("list_job_posts", () => {
-    it("passes pagination and status params to client", async () => {
+    it("passes pagination and filter params to client", async () => {
       (mockKula.get as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
         data: [{ id: "1", title: "Engineer" }],
       });
 
       const result = await client.callTool({
         name: "list_job_posts",
-        arguments: { page: "2", per_page: "5", status: "published" },
+        arguments: { page: "2", limit: "5", department_ids: "1,2", office_ids: "10" },
       });
 
-      expect(mockKula.get).toHaveBeenCalledWith("/v1/job-boards/job-posts", {
-        page: "2",
-        per_page: "5",
-        status: "published",
-      });
+      const call = (mockKula.get as ReturnType<typeof vi.fn>).mock.calls.at(-1);
+      expect(call[0]).toBe("/v1/job-boards/job-posts");
+      expect(call[1].page).toBe("2");
+      expect(call[1].limit).toBe("5");
+      expect(call[1].department_ids).toEqual([1, 2]);
+      expect(call[1].office_ids).toEqual([10]);
 
       const text = (result.content as Array<{ type: string; text: string }>)[0]
         .text;

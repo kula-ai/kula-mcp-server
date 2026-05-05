@@ -32,8 +32,8 @@ describe("autocomplete tools", () => {
       });
 
       expect(mockKula.get).toHaveBeenCalledWith(
-        "/v1/autocomplete/companies",
-        { query: "acme" }
+        "/v1/job-boards/autocomplete/companies",
+        { q: "acme" }
       );
 
       const text = (result.content as Array<{ type: string; text: string }>)[0]
@@ -54,7 +54,7 @@ describe("autocomplete tools", () => {
       });
 
       expect(mockKula.get).toHaveBeenCalledWith(
-        "/v1/autocomplete/industries"
+        "/v1/job-boards/autocomplete/industries"
       );
       expect(result.isError).toBeFalsy();
     });
@@ -72,8 +72,8 @@ describe("autocomplete tools", () => {
       });
 
       expect(mockKula.get).toHaveBeenCalledWith(
-        "/v1/autocomplete/locations",
-        { query: "san fran" }
+        "/v1/job-boards/autocomplete/locations",
+        { q: "san fran" }
       );
 
       const text = (result.content as Array<{ type: string; text: string }>)[0]
@@ -94,8 +94,8 @@ describe("autocomplete tools", () => {
       });
 
       expect(mockKula.get).toHaveBeenCalledWith(
-        "/v1/autocomplete/institutions",
-        { query: "mit" }
+        "/v1/job-boards/autocomplete/institutions",
+        { q: "mit" }
       );
 
       const text = (result.content as Array<{ type: string; text: string }>)[0]
@@ -116,8 +116,8 @@ describe("autocomplete tools", () => {
       });
 
       expect(mockKula.get).toHaveBeenCalledWith(
-        "/v1/autocomplete/disciplines",
-        { query: "comp" }
+        "/v1/job-boards/autocomplete/disciplines",
+        { q: "comp" }
       );
 
       const text = (result.content as Array<{ type: string; text: string }>)[0]
@@ -138,7 +138,7 @@ describe("autocomplete tools", () => {
       });
 
       expect(mockKula.get).toHaveBeenCalledWith(
-        "/v1/autocomplete/degrees"
+        "/v1/job-boards/autocomplete/degrees"
       );
       expect(result.isError).toBeFalsy();
     });

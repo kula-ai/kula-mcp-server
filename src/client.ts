@@ -1,3 +1,5 @@
+type ParamValue = string | number | boolean | string[] | number[] | undefined;
+
 export class KulaClient {
   private apiKey: string;
   private baseUrl: string;
@@ -18,13 +20,18 @@ export class KulaClient {
     method: string,
     path: string,
     body?: unknown,
-    params?: Record<string, string | undefined>
+    params?: Record<string, ParamValue>
   ): Promise<unknown> {
     const url = new URL(path, this.baseUrl);
     if (params) {
       for (const [key, value] of Object.entries(params)) {
-        if (value !== undefined) {
-          url.searchParams.set(key, value);
+        if (value === undefined) continue;
+        if (Array.isArray(value)) {
+          for (const item of value) {
+            url.searchParams.append(`${key}[]`, String(item));
+          }
+        } else {
+          url.searchParams.set(key, String(value));
         }
       }
     }
@@ -51,7 +58,7 @@ export class KulaClient {
 
   async get(
     path: string,
-    params?: Record<string, string | undefined>
+    params?: Record<string, ParamValue>
   ): Promise<unknown> {
     return this.request("GET", path, undefined, params);
   }

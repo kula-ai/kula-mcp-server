@@ -9,17 +9,17 @@ export function register(server: McpServer, client: KulaClient) {
       description: "List published job posts on the job board. Only use when the user explicitly asks about job board listings.",
       inputSchema: {
         page: z.string().optional().describe("Page number"),
-        per_page: z.string().optional().describe("Items per page"),
-        status: z.string().optional().describe("Filter by status"),
+        limit: z.string().optional().describe("Items per page"),
+        department_ids: z.string().optional().describe("Comma-separated department IDs to filter by"),
+        office_ids: z.string().optional().describe("Comma-separated office IDs to filter by"),
       },
     },
-    async ({ page, per_page, status }) => {
+    async ({ page, limit, department_ids, office_ids }) => {
       try {
-        const data = await client.get("/v1/job-boards/job-posts", {
-          page,
-          per_page,
-          status,
-        });
+        const params: Record<string, string | number[] | undefined> = { page, limit };
+        if (department_ids !== undefined) params.department_ids = department_ids.split(",").map((s) => Number(s.trim()));
+        if (office_ids !== undefined) params.office_ids = office_ids.split(",").map((s) => Number(s.trim()));
+        const data = await client.get("/v1/job-boards/job-posts", params);
         return {
           content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
         };

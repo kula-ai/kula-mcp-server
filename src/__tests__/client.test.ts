@@ -57,6 +57,24 @@ describe("KulaClient", () => {
       expect(url).toContain("per_page=10");
     });
 
+    it("serializes array params with bracket notation", async () => {
+      mockFetch.mockResolvedValueOnce(jsonResponse({}));
+      await client.get("/v1/jobs", { department_ids: [1, 2, 3] });
+
+      const [url] = mockFetch.mock.calls[0];
+      expect(url).toContain("department_ids%5B%5D=1");
+      expect(url).toContain("department_ids%5B%5D=2");
+      expect(url).toContain("department_ids%5B%5D=3");
+    });
+
+    it("serializes boolean params as strings", async () => {
+      mockFetch.mockResolvedValueOnce(jsonResponse({}));
+      await client.get("/v1/sources", { enabled: true });
+
+      const [url] = mockFetch.mock.calls[0];
+      expect(url).toContain("enabled=true");
+    });
+
     it("skips undefined params", async () => {
       mockFetch.mockResolvedValueOnce(jsonResponse({}));
       await client.get("/v1/job-posts", {

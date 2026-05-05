@@ -28,20 +28,35 @@ describe("applications tools", () => {
 
       const result = await client.callTool({
         name: "list_applications",
-        arguments: { page: "1", limit: "10", job_id: "jp-1", status: "submitted" },
+        arguments: { page: "1", limit: "10", job_id: "5", status: "submitted" },
       });
 
       expect(mockKula.get).toHaveBeenCalledWith("/v1/applications", {
         page: "1",
         limit: "10",
-        job_id: "jp-1",
-        status: "submitted",
-        stage_ids: undefined,
-        credited_to_user_ids: undefined,
+        job_id: 5,
+        status: ["submitted"],
         sort_by: undefined,
         sort_order: undefined,
+        created_after: undefined,
+        created_before: undefined,
+        updated_after: undefined,
+        updated_before: undefined,
       });
       expect(result.isError).toBeFalsy();
+    });
+
+    it("splits stage_ids and credited_to_user_ids into integer arrays", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: [] });
+
+      await client.callTool({
+        name: "list_applications",
+        arguments: { stage_ids: "1,2,3", credited_to_user_ids: "10,20" },
+      });
+
+      const call = (mockKula.get as ReturnType<typeof vi.fn>).mock.calls.at(-1);
+      expect(call[1].stage_ids).toEqual([1, 2, 3]);
+      expect(call[1].credited_to_user_ids).toEqual([10, 20]);
     });
   });
 
@@ -66,8 +81,8 @@ describe("applications tools", () => {
   });
 
   describe("update_application_stage", () => {
-    it("posts stage_id as number to correct endpoint", async () => {
-      (mockKula.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+    it("patches stage_id as number to correct endpoint", async () => {
+      (mockKula.patch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
         id: "app-1",
         stage_id: 5,
       });
@@ -77,11 +92,62 @@ describe("applications tools", () => {
         arguments: { id: "app-1", stage_id: "5" },
       });
 
-      expect(mockKula.post).toHaveBeenCalledWith(
-        "/v1/applications/app-1/update-stage",
+      expect(mockKula.patch).toHaveBeenCalledWith(
+        "/v1/applications/app-1/stage",
         { stage_id: 5 }
       );
       expect(result.isError).toBeFalsy();
+    });
+
+    it("includes requisition_code when provided", async () => {
+      (mockKula.patch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ id: "app-1" });
+
+      await client.callTool({
+        name: "update_application_stage",
+        arguments: { id: "app-1", stage_id: "5", requisition_code: "REQ-42" },
+      });
+
+      expect(mockKula.patch).toHaveBeenCalledWith(
+        "/v1/applications/app-1/stage",
+        { stage_id: 5, requisition_code: "REQ-42" }
+      );
+    });
+  });
+
+  describe("list_application_notes", () => {
+    it("calls correct endpoint with application_id", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: [] });
+      await client.callTool({ name: "list_application_notes", arguments: { application_id: "5", page: "1" } });
+      expect(mockKula.get).toHaveBeenCalledWith("/v1/applications/5/notes", { page: "1", limit: undefined });
+    });
+  });
+
+  describe("create_application_note", () => {
+    it("posts note body to correct endpoint", async () => {
+      (mockKula.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ id: "n-1" });
+      await client.callTool({ name: "create_application_note", arguments: { application_id: "5", body: "Great candidate" } });
+      expect(mockKula.post).toHaveBeenCalledWith("/v1/applications/5/notes", { body: "Great candidate" });
+    });
+
+    it("passes notify_recruiter boolean to client", async () => {
+      (mockKula.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ id: "n-1" });
+      await client.callTool({ name: "create_application_note", arguments: { application_id: "5", body: "Note", notify_recruiter: true } });
+      const call = (mockKula.post as ReturnType<typeof vi.fn>).mock.calls.at(-1);
+      expect(call[1].notify_recruiter).toBe(true);
+    });
+  });
+
+  describe("update_application_note", () => {
+    it("patches note body to correct endpoint", async () => {
+      (mockKula.patch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ id: "n-1" });
+      await client.callTool({ name: "update_application_note", arguments: { application_id: "5", id: "n-1", body: "Updated" } });
+      expect(mockKula.patch).toHaveBeenCalledWith("/v1/applications/5/notes/n-1", { body: "Updated" });
+    });
+
+    it("passes notify_recruiter boolean to client", async () => {
+      (mockKula.patch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ id: "n-1" });
+      await client.callTool({ name: "update_application_note", arguments: { application_id: "5", id: "n-1", notify_recruiter: true } });
+      expect(mockKula.patch).toHaveBeenCalledWith("/v1/applications/5/notes/n-1", { notify_recruiter: true });
     });
   });
 
@@ -121,15 +187,52 @@ describe("applications tools", () => {
     });
 
     it("handles Error in update_application_stage", async () => {
-      (mockKula.post as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("fail"));
+      (mockKula.patch as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("fail"));
       const result = await client.callTool({ name: "update_application_stage", arguments: { id: "x", stage_id: "1" } });
       expect(result.isError).toBe(true);
     });
 
     it("handles non-Error throws in update_application_stage", async () => {
-      (mockKula.post as ReturnType<typeof vi.fn>).mockRejectedValueOnce("fail");
+      (mockKula.patch as ReturnType<typeof vi.fn>).mockRejectedValueOnce("fail");
       const result = await client.callTool({ name: "update_application_stage", arguments: { id: "x", stage_id: "1" } });
       expect(result.isError).toBe(true);
     });
+
+    it("handles errors in list_application_notes", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("fail"));
+      const result = await client.callTool({ name: "list_application_notes", arguments: { application_id: "5" } });
+      expect(result.isError).toBe(true);
+    });
+
+    it("handles non-Error throws in list_application_notes", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockRejectedValueOnce("string error");
+      const result = await client.callTool({ name: "list_application_notes", arguments: { application_id: "5" } });
+      expect(result.isError).toBe(true);
+    });
+
+    it("handles errors in create_application_note", async () => {
+      (mockKula.post as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("fail"));
+      const result = await client.callTool({ name: "create_application_note", arguments: { application_id: "5", body: "Note" } });
+      expect(result.isError).toBe(true);
+    });
+
+    it("handles non-Error throws in create_application_note", async () => {
+      (mockKula.post as ReturnType<typeof vi.fn>).mockRejectedValueOnce("string error");
+      const result = await client.callTool({ name: "create_application_note", arguments: { application_id: "5", body: "Note" } });
+      expect(result.isError).toBe(true);
+    });
+
+    it("handles errors in update_application_note", async () => {
+      (mockKula.patch as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("fail"));
+      const result = await client.callTool({ name: "update_application_note", arguments: { application_id: "5", id: "n-1", body: "Updated" } });
+      expect(result.isError).toBe(true);
+    });
+
+    it("handles non-Error throws in update_application_note", async () => {
+      (mockKula.patch as ReturnType<typeof vi.fn>).mockRejectedValueOnce("string error");
+      const result = await client.callTool({ name: "update_application_note", arguments: { application_id: "5", id: "n-1", body: "Updated" } });
+      expect(result.isError).toBe(true);
+    });
+
   });
 });
