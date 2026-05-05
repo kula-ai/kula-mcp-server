@@ -98,21 +98,21 @@ export function register(server: McpServer, client: KulaClient) {
       description:
         "List default and custom field definitions for requisitions. Hidden fields are excluded. Optionally filter by department or office.",
       inputSchema: {
-        department_id: z
+        department_ids: z
           .string()
           .optional()
-          .describe("Department ID to filter scoped custom fields"),
+          .describe("Comma-separated department IDs to filter scoped custom fields"),
         office_ids: z
           .string()
           .optional()
           .describe("Comma-separated office IDs to filter scoped custom fields"),
       },
     },
-    async ({ department_id, office_ids }) => {
+    async ({ department_ids, office_ids }) => {
       try {
         const data = await client.get("/v1/requisitions/fields", {
-          department_id,
-          ...(office_ids !== undefined && { office_ids: office_ids.split(",").map((s) => Number(s.trim())) }),
+          ...(department_ids !== undefined && { "department_ids[]": department_ids.split(",").map((s) => Number(s.trim())) }),
+          ...(office_ids !== undefined && { "office_ids[]": office_ids.split(",").map((s) => Number(s.trim())) }),
         });
         return {
           content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
