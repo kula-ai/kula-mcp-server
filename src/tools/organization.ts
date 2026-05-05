@@ -232,7 +232,7 @@ export function register(server: McpServer, client: KulaClient) {
   server.registerTool(
     "list_users",
     {
-      description: "List internal users in the organization. Defaults to active users. Use the status filter to include pending, deactivated, or imported users.",
+      description: "List users in the organization. Defaults to active users. Use the status filter to include pending, deactivated, or imported users.",
       inputSchema: {
         page: z.string().optional().describe("Page number"),
         limit: z.string().optional().describe("Items per page"),
