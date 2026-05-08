@@ -281,7 +281,7 @@ export function register(server: McpServer, client: KulaClient) {
       description:
         "Poll for the result of a previous `check_interviewers_availability` call. Returns 200 with status=succeeded/failed when terminated, 202 with status=pending while running, 410 if expired (1-hour TTL after completion). Respect the Retry-After header — don't poll faster than every 5s. For production loads, prefer the `interview.availability.computed` webhook.",
       inputSchema: {
-        poll_id: z.string().describe("poll_id from check_interviewers_availability (24-char Sidekiq jid)"),
+        poll_id: z.string().describe("poll_id returned by check_interviewers_availability (24-char hex string)"),
       },
     },
     async ({ poll_id }) => {
