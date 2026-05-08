@@ -118,17 +118,34 @@ export function register(server: McpServer, client: KulaClient) {
     "create_interview",
     {
       description:
-        "Schedule an interview against an application. Calendar invites and conference URL are provisioned asynchronously — subscribe to the `interview.event.created` webhook to receive the fully-provisioned interview. " +
-        "When `stage_activity_id` is set, scorecard config is inherited from the interview-plan activity (scorecard_template_id is silently ignored). " +
-        "`start_time` must be on a 15-minute boundary with zero seconds and in the future.",
+        "Schedule an interview against an application. Calendar invites and conference URL are provisioned asynchronously — subscribe to the `interview.event.created` webhook to receive the fully-provisioned interview.\n" +
+        "\n" +
+        "**Typical workflow:**\n" +
+        "1. Plan-driven: `get_interview_plan` → pick a `stage_activity_id` → `check_interviewers_availability` → `create_interview` with `stage_activity_id` (scorecard config inherits from the activity; pass `scorecard_template_id` only when stage_activity_id is NOT set).\n" +
+        "2. Ad-hoc: `list_valid_organizers` (organizer_id) → `list_applications` (application_id) → `check_interviewers_availability` → `create_interview`.\n" +
+        "\n" +
+        "**Where to discover IDs:**\n" +
+        "- `application_id` → `list_applications`\n" +
+        "- `organizer_id` → `list_valid_organizers` (filtered by job_id)\n" +
+        "- `interviewer_ids` → `list_users` (any active user)\n" +
+        "- `office_id` → `list_offices` (required when location=onsite)\n" +
+        "- `host_id` → `list_conference_hosts` (required when location=zoom; must be in interviewer_ids)\n" +
+        "- `stage_activity_id` → `get_interview_plan`\n" +
+        "- `interviewer_template_id` / `candidate_template_id` → `list_email_templates`\n" +
+        "- `scorecard_template_id` → `list_scorecard_templates`\n" +
+        "\n" +
+        "**Constraints:**\n" +
+        "- `start_time` must be on a 15-minute boundary with zero seconds (e.g. `09:00:00`, `09:15:00`) and in the future\n" +
+        "- `duration_minutes` must be a multiple of 15 (15..1440)\n" +
+        "- `kind: one_on_one` requires exactly one entry in `interviewer_ids`",
       inputSchema: {
         organizer_id: z.number().int().describe("ID of the user who organizes the interview. Use list_valid_organizers to discover."),
         application_id: z.number().int().describe("ID of the application (candidate's submission to a job — NOT a candidate id)."),
         start_time: z.string().describe("ISO 8601 datetime, on 15-min boundary, in the future"),
         duration_minutes: z.number().int().describe("Length in minutes — multiple of 15, between 15 and 1440"),
         timezone: z.string().describe("IANA timezone name (e.g., America/Los_Angeles)"),
-        kind: z.enum(VALID_KINDS).describe("Type of interview"),
-        location: z.enum(VALID_LOCATIONS).describe("Where the interview takes place"),
+        kind: z.enum(VALID_KINDS).describe(`Type of interview: ${VALID_KINDS.join(" | ")}`),
+        location: z.enum(VALID_LOCATIONS).describe(`Location: ${VALID_LOCATIONS.join(" | ")}`),
         interviewer_ids: z.array(z.number().int()).min(1).max(10).describe("IDs of users participating in the interview"),
         stage_activity_id: z.number().int().optional().describe("Interview-plan activity ID (from get_interview_plan). When set, scorecard config inherits from the activity."),
         office_id: z.number().int().optional().describe("Required when location=onsite"),
@@ -156,24 +173,26 @@ export function register(server: McpServer, client: KulaClient) {
     "update_interview",
     {
       description:
-        "Update an existing interview. All fields are optional — only the supplied fields are modified. `organizer_id`, `application_id`, `job_id`, `stage_id`, `candidate_id`, and `stage_activity_id` are immutable.",
+        "Update an existing interview. All fields are optional — only the supplied fields are modified. " +
+        "Immutable fields (cannot be changed after creation): `organizer_id`, `application_id`, `job_id`, `stage_id`, `candidate_id`, `stage_activity_id`, `scorecard_template_id`. " +
+        "Cancelled interviews cannot be updated (returns 422 err_interview_cancelled).",
       inputSchema: {
         id: z.string().describe("Interview ID"),
-        start_time: z.string().optional().describe("New start_time (ISO 8601, 15-min boundary)"),
-        duration_minutes: z.number().int().optional(),
-        timezone: z.string().optional(),
-        kind: z.enum(VALID_KINDS).optional(),
-        location: z.enum(VALID_LOCATIONS).optional(),
+        start_time: z.string().optional().describe("New start_time (ISO 8601, on 15-min boundary, zero seconds)"),
+        duration_minutes: z.number().int().optional().describe("Multiple of 15, 15..1440"),
+        timezone: z.string().optional().describe("IANA timezone (e.g., America/Los_Angeles)"),
+        kind: z.enum(VALID_KINDS).optional().describe(`Interview type: ${VALID_KINDS.join(" | ")}`),
+        location: z.enum(VALID_LOCATIONS).optional().describe(`Location: ${VALID_LOCATIONS.join(" | ")}`),
         interviewer_ids: z.array(z.number().int()).min(1).max(10).optional(),
-        office_id: z.number().int().optional(),
-        host_id: z.number().int().optional(),
-        hackerrank_template_id: z.number().int().optional(),
+        office_id: z.number().int().optional().describe("Required when location=onsite"),
+        host_id: z.number().int().optional().describe("Required when location=zoom; must be in interviewer_ids"),
+        hackerrank_template_id: z.number().int().optional().describe("Required when location=hackerrank"),
         name: z.string().max(255).optional(),
-        calendar_event_visibility: z.enum(VALID_VISIBILITIES).optional(),
+        calendar_event_visibility: z.enum(VALID_VISIBILITIES).optional().describe(`Visibility: ${VALID_VISIBILITIES.join(" | ")}`),
         ai_note_taker_enabled: z.boolean().optional(),
         ai_scorecard_assist_enabled: z.boolean().optional(),
-        interviewer_template_id: z.number().int().optional(),
-        candidate_template_id: z.number().int().optional(),
+        interviewer_template_id: z.number().int().optional().describe("From list_email_templates"),
+        candidate_template_id: z.number().int().optional().describe("From list_email_templates"),
       },
     },
     async ({ id, ...body }) => {
@@ -188,7 +207,9 @@ export function register(server: McpServer, client: KulaClient) {
   server.registerTool(
     "cancel_interview",
     {
-      description: "Cancel a scheduled interview. Calendar events are torn down and cancellation notifications dispatched asynchronously.",
+      description:
+        "Cancel a scheduled interview. Calendar events are torn down and cancellation notifications dispatched asynchronously. " +
+        "Cannot cancel: already-cancelled interviews (err_interview_already_cancelled), or completed HackerRank interviews (err_cannot_cancel_completed_hackerrank).",
       inputSchema: { id: z.string().describe("Interview ID") },
     },
     async ({ id }) => {
@@ -234,15 +255,17 @@ export function register(server: McpServer, client: KulaClient) {
     "check_interviewers_availability",
     {
       description:
-        "Compute free interview slots for a set of interviewers. Async — returns a `poll_id` immediately. Use `get_interviewers_availability_result` to poll, OR subscribe to the `interview.availability.computed` webhook for push delivery.",
+        "Compute free interview slots across the organizer + interviewers' calendars. **Async** — returns a `poll_id` immediately. " +
+        "Get the result two ways: (a) call `get_interviewers_availability_result` with the poll_id, or (b) subscribe to the `interview.availability.computed` webhook (recommended for production — avoids polling). " +
+        "Result expires 1 hour after computation.",
       inputSchema: {
-        organizer_id: z.number().int().describe("User running the search"),
-        interviewer_ids: z.array(z.number().int()).min(1).max(25),
+        organizer_id: z.number().int().describe("User running the search (from list_valid_organizers)"),
+        interviewer_ids: z.array(z.number().int()).min(1).max(25).describe("User IDs to check availability for"),
         start_time: z.string().describe("Search window start (ISO 8601)"),
         end_time: z.string().optional().describe("Search window end (ISO 8601). Defaults to start_time + 7 days. Max 30 days."),
-        duration_minutes: z.number().int().describe("Slot length to search for, 15..480"),
-        interview_kind: z.enum(VALID_KINDS).describe("`panel` = slots free for all interviewers; `one_on_one` = union"),
-        timezone: z.string().describe("IANA timezone"),
+        duration_minutes: z.number().int().describe("Slot length, 15..480"),
+        interview_kind: z.enum(VALID_KINDS).describe("`panel` = slots when ALL interviewers are simultaneously free (intersection). `one_on_one` = slots when ANY one interviewer is free (union)"),
+        timezone: z.string().describe("IANA timezone (e.g., America/Los_Angeles)"),
       },
     },
     async (body) => {
