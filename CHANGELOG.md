@@ -1,11 +1,5 @@
 # Changelog
 
-## Unreleased
-
-### Added
-
-**Interviews** — full interview lifecycle support: `list_interviews`, `get_interview`, `create_interview`, `update_interview`, `cancel_interview`, `mark_candidate_no_show`, `undo_candidate_no_show`, `check_interviewers_availability` (async, returns poll_id), `get_interviewers_availability_result` (poll endpoint), `list_valid_organizers`, `list_conference_hosts`, `get_interview_plan`.
-
 ## 0.1.0
 
 Initial release of the Kula MCP Server.
