@@ -258,11 +258,11 @@ export function register(server: McpServer, client: KulaClient) {
         "Result expires 1 hour after computation.",
       inputSchema: {
         organizer_id: z.number().int().describe("User running the search (from list_valid_organizers)"),
-        interviewer_ids: z.array(z.number().int()).min(1).max(25).describe("User IDs to check availability for"),
+        interviewer_ids: z.array(z.number().int()).min(1).max(10).describe("User IDs to check availability for. Up to 10 interviewers per request."),
         start_time: z.string().describe("Search window start (ISO 8601)"),
         end_time: z.string().optional().describe("Search window end (ISO 8601). Defaults to start_time + 7 days. Max 30 days."),
         duration_minutes: z.number().int().describe("Slot length, 15..480"),
-        interview_kind: z.enum(VALID_KINDS).describe("`panel` = slots when ALL interviewers are simultaneously free (intersection). `one_on_one` = slots when ANY one interviewer is free (union)"),
+        interview_kind: z.enum(VALID_KINDS).describe("`panel` = slots when ALL interviewers are simultaneously free (intersection). `one_on_one` = slots when ANY one interviewer is free (union)."),
         timezone: z.string().describe("IANA timezone (e.g., America/Los_Angeles)"),
       },
     },
