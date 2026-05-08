@@ -255,14 +255,15 @@ export function register(server: McpServer, client: KulaClient) {
       description:
         "Compute free interview slots across the organizer + interviewers' calendars. **Async** — returns a `poll_id` immediately. " +
         "Get the result two ways: (a) call `get_interviewers_availability_result` with the poll_id, or (b) subscribe to the `interview.availability.computed` webhook (recommended for production — avoids polling). " +
-        "Result expires 1 hour after computation.",
+        "Result expires 1 hour after computation.\n\n" +
+        "Each returned slot carries `interviewer_ids` — the user IDs free at that range. For `panel`, every slot lists every interviewer in the request (a panel slot requires all of them to be free). For `one_on_one`, each slot lists the subset free at that range; pick one of those IDs when calling `create_interview`.",
       inputSchema: {
         organizer_id: z.number().int().describe("User running the search (from list_valid_organizers)"),
         interviewer_ids: z.array(z.number().int()).min(1).max(10).describe("User IDs to check availability for. Up to 10 interviewers per request."),
         start_time: z.string().describe("Search window start (ISO 8601)"),
         end_time: z.string().optional().describe("Search window end (ISO 8601). Defaults to start_time + 7 days. Max 30 days."),
         duration_minutes: z.number().int().describe("Slot length, 15..480"),
-        interview_kind: z.enum(VALID_KINDS).describe("`panel` = slots when ALL interviewers are simultaneously free (intersection). `one_on_one` = slots when ANY one interviewer is free (union)."),
+        interview_kind: z.enum(VALID_KINDS).describe("`panel` = slots when ALL interviewers are simultaneously free (intersection). `one_on_one` = each interviewer's free slots are emitted independently and tagged with that user's ID."),
         timezone: z.string().describe("IANA timezone (e.g., America/Los_Angeles)"),
       },
     },
@@ -279,7 +280,8 @@ export function register(server: McpServer, client: KulaClient) {
     "get_interviewers_availability_result",
     {
       description:
-        "Poll for the result of a previous `check_interviewers_availability` call. Returns 200 with status=succeeded/failed when terminated, 202 with status=pending while running, 410 if expired (1-hour TTL after completion). Respect the Retry-After header — don't poll faster than every 5s. For production loads, prefer the `interview.availability.computed` webhook.",
+        "Poll for the result of a previous `check_interviewers_availability` call. Returns 200 with status=succeeded/failed when terminated, 202 with status=pending while running, 410 if expired (1-hour TTL after completion). Respect the Retry-After header — don't poll faster than every 5s. For production loads, prefer the `interview.availability.computed` webhook.\n\n" +
+        "Each slot in the response includes `interviewer_ids` — the user IDs free at that slot. Use one of those IDs as `interviewer_ids` (and `host_id` for zoom) when calling `create_interview`.",
       inputSchema: {
         poll_id: z.string().describe("poll_id returned by check_interviewers_availability (24-char hex string)"),
       },
