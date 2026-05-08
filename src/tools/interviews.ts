@@ -10,13 +10,11 @@ const VALID_VISIBILITIES = ["default", "private"] as const;
 const VALID_SORT_BY = ["created_at", "updated_at", "start_time"] as const;
 const VALID_SORT_ORDER = ["asc", "desc"] as const;
 
-function csvNumberArray(value: string | undefined): number[] | undefined {
-  if (value === undefined) return undefined;
+function csvNumberArray(value: string): number[] {
   return value.split(",").map((s) => Number(s.trim())).filter((n) => !Number.isNaN(n));
 }
 
-function csvStringArray(value: string | undefined): string[] | undefined {
-  if (value === undefined) return undefined;
+function csvStringArray(value: string): string[] {
   return value.split(",").map((s) => s.trim()).filter((s) => s.length > 0);
 }
 

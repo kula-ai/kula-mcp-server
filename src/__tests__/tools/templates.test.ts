@@ -50,6 +50,27 @@ describe("templates tools", () => {
       const result = await client.callTool({ name: "list_scorecard_templates", arguments: {} });
       expect(result.isError).toBe(true);
     });
+
+    it("drops invalid CSV entries (NaN numbers, empty strings)", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: [] });
+      await client.callTool({
+        name: "list_scorecard_templates",
+        arguments: { department_ids: "3,bad,4", employment_types: "full_time,,contract" },
+      });
+      expect(mockKula.get).toHaveBeenCalledWith(
+        "/v1/scorecard_templates",
+        expect.objectContaining({
+          department_ids: [3, 4],
+          employment_types: ["full_time", "contract"],
+        })
+      );
+    });
+
+    it("works with no filters (all optional)", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: [] });
+      const result = await client.callTool({ name: "list_scorecard_templates", arguments: {} });
+      expect(result.isError).toBeFalsy();
+    });
   });
 
   describe("get_scorecard_template", () => {
@@ -82,6 +103,12 @@ describe("templates tools", () => {
         })
       );
     });
+
+    it("works with no filters (all optional)", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: [] });
+      const result = await client.callTool({ name: "list_email_templates", arguments: {} });
+      expect(result.isError).toBeFalsy();
+    });
   });
 
   describe("get_email_template", () => {
@@ -89,6 +116,18 @@ describe("templates tools", () => {
       (mockKula.get as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: { id: 88 } });
       await client.callTool({ name: "get_email_template", arguments: { id: "88" } });
       expect(mockKula.get).toHaveBeenCalledWith("/v1/email_templates/88");
+    });
+  });
+
+  describe("error paths", () => {
+    it.each([
+      ["get_scorecard_template", { id: "1" }],
+      ["list_email_templates", {}],
+      ["get_email_template", { id: "1" }],
+    ] as const)("%s returns isError on client failure", async (name, args) => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("boom"));
+      const result = await client.callTool({ name, arguments: args });
+      expect(result.isError).toBe(true);
     });
   });
 });

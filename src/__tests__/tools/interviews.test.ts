@@ -56,6 +56,50 @@ describe("interviews tools", () => {
       const result = await client.callTool({ name: "list_interviews", arguments: {} });
       expect(result.isError).toBe(true);
     });
+
+    it("drops non-numeric values when CSV contains garbage", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: [] });
+      await client.callTool({
+        name: "list_interviews",
+        arguments: { job_ids: "1,not-a-number,2" },
+      });
+      expect(mockKula.get).toHaveBeenCalledWith(
+        "/v1/interviews",
+        expect.objectContaining({ job_ids: [1, 2] })
+      );
+    });
+
+    it("forwards every optional filter when all are provided", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: [] });
+
+      await client.callTool({
+        name: "list_interviews",
+        arguments: {
+          page: "1", limit: "20",
+          job_ids: "1", application_ids: "2", candidate_ids: "3",
+          interviewer_ids: "4", organizer_ids: "5", recruiter_ids: "6",
+          department_ids: "7", office_ids: "8",
+          meeting_status: "ended", kind: "panel", location: "zoom",
+          ai_note_taker_enabled: "false",
+          start_time_after: "2026-05-01T00:00:00Z",
+          start_time_before: "2026-05-31T00:00:00Z",
+          created_after: "2026-01-01T00:00:00Z",
+          created_before: "2026-12-31T00:00:00Z",
+          updated_after: "2026-01-01T00:00:00Z",
+          updated_before: "2026-12-31T00:00:00Z",
+          sort_by: "start_time", sort_order: "asc",
+        },
+      });
+
+      expect(mockKula.get).toHaveBeenCalledWith(
+        "/v1/interviews",
+        expect.objectContaining({
+          job_ids: [1], organizer_ids: [5], recruiter_ids: [6], department_ids: [7],
+          location: ["zoom"], kind: ["panel"], ai_note_taker_enabled: false,
+          interviewer_ids: [4], application_ids: [2], office_ids: [8],
+        })
+      );
+    });
   });
 
   describe("get_interview", () => {
@@ -176,6 +220,37 @@ describe("interviews tools", () => {
       (mockKula.get as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: { job_id: 88, stages: [] } });
       await client.callTool({ name: "get_interview_plan", arguments: { job_id: "88" } });
       expect(mockKula.get).toHaveBeenCalledWith("/v1/jobs/88/interview_plan");
+    });
+  });
+
+  describe("error paths", () => {
+    const fail = (method: "get" | "post" | "patch") => () => {
+      (mockKula[method] as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("boom"));
+    };
+
+    it.each([
+      ["get_interview", "get", { id: "1" }],
+      ["create_interview", "post", {
+        organizer_id: 1, application_id: 1, start_time: "2026-05-12T17:00:00Z",
+        duration_minutes: 30, timezone: "UTC", kind: "one_on_one", location: "google_meet",
+        interviewer_ids: [1],
+      }],
+      ["update_interview", "patch", { id: "1", duration_minutes: 60 }],
+      ["cancel_interview", "post", { id: "1" }],
+      ["mark_candidate_no_show", "post", { id: "1" }],
+      ["undo_candidate_no_show", "post", { id: "1" }],
+      ["check_interviewers_availability", "post", {
+        organizer_id: 1, interviewer_ids: [1], start_time: "2026-05-12T00:00:00Z",
+        duration_minutes: 30, interview_kind: "panel", timezone: "UTC",
+      }],
+      ["get_interviewers_availability_result", "get", { poll_id: "abc" }],
+      ["list_valid_organizers", "get", { job_id: 1 }],
+      ["list_conference_hosts", "get", { provider: "zoom" }],
+      ["get_interview_plan", "get", { job_id: "1" }],
+    ] as const)("%s returns isError on client failure", async (name, method, args) => {
+      fail(method)();
+      const result = await client.callTool({ name, arguments: args });
+      expect(result.isError).toBe(true);
     });
   });
 });
