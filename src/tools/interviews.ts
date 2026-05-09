@@ -131,11 +131,13 @@ export function register(server: McpServer, client: KulaClient) {
         "- `stage_activity_id` → `get_interview_plan`\n" +
         "- `interviewer_template_id` / `candidate_template_id` → `list_email_templates`\n" +
         "- `scorecard_template_id` → `list_scorecard_templates`\n" +
+        "- `shared_calendar_id` → `list_shared_calendars`\n" +
         "\n" +
         "**Constraints:**\n" +
         "- `start_time` must be on a 15-minute boundary with zero seconds (e.g. `09:00:00`, `09:15:00`) and in the future\n" +
         "- `duration_minutes` must be a multiple of 15 (15..1440)\n" +
-        "- `kind: one_on_one` requires exactly one entry in `interviewer_ids`",
+        "- `kind: one_on_one` requires exactly one entry in `interviewer_ids`\n" +
+        "- When `shared_calendar_id` is set, the organizer's connected calendar provider must match the shared calendar's provider, else the request fails with `err_shared_calendar_provider_mismatch`",
       inputSchema: {
         organizer_id: z.number().int().describe("ID of the user who organizes the interview. Use list_valid_organizers to discover."),
         application_id: z.number().int().describe("ID of the application (candidate's submission to a job — NOT a candidate id)."),
@@ -156,6 +158,7 @@ export function register(server: McpServer, client: KulaClient) {
         interviewer_template_id: z.number().int().optional().describe("Email template ID for interviewer invite body"),
         candidate_template_id: z.number().int().optional().describe("Email template ID for candidate invite body"),
         scorecard_template_id: z.number().int().optional().describe("Scorecard template ID. Silently ignored when stage_activity_id is set."),
+        shared_calendar_id: z.number().int().optional().describe("ID of a shared calendar to host the calendar event on (from list_shared_calendars). When omitted, the event is created on the organizer's primary calendar."),
       },
     },
     async (body) => {
