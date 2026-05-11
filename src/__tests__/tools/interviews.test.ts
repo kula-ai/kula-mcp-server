@@ -102,6 +102,37 @@ describe("interviews tools", () => {
     });
   });
 
+  describe("list_application_interviews", () => {
+    it("calls GET /v1/applications/:application_id/interviews with filters", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: [] });
+      await client.callTool({
+        name: "list_application_interviews",
+        arguments: {
+          application_id: 16966,
+          interviewer_ids: "4,5",
+          meeting_status: "ended,cancelled",
+          ai_note_taker_enabled: "true",
+          limit: "10",
+        },
+      });
+      expect(mockKula.get).toHaveBeenCalledWith(
+        "/v1/applications/16966/interviews",
+        expect.objectContaining({
+          interviewer_ids: [4, 5],
+          meeting_status: ["ended", "cancelled"],
+          ai_note_taker_enabled: true,
+          limit: "10",
+        })
+      );
+    });
+
+    it("returns isError on client failure", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("boom"));
+      const result = await client.callTool({ name: "list_application_interviews", arguments: { application_id: 1 } });
+      expect(result.isError).toBe(true);
+    });
+  });
+
   describe("get_interview", () => {
     it("calls GET /v1/interviews/:id", async () => {
       (mockKula.get as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: { id: 7 } });
