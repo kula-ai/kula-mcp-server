@@ -111,7 +111,7 @@ describe("interviews tools", () => {
   });
 
   describe("create_interview", () => {
-    it("posts to /v1/applications/:application_id/interviews without application_id in body", async () => {
+    it("posts to /v1/applications/:application_id/interviews", async () => {
       (mockKula.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: { id: 99 } });
       const args = {
         organizer_id: 1,
