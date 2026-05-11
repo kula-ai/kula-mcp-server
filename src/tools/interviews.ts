@@ -158,9 +158,9 @@ export function register(server: McpServer, client: KulaClient) {
         scorecard_template_id: z.number().int().optional().describe("Scorecard template ID. Silently ignored when stage_activity_id is set."),
       },
     },
-    async (body) => {
+    async ({ application_id, ...body }) => {
       try {
-        return okResult(await client.post("/v1/interviews", body));
+        return okResult(await client.post(`/v1/applications/${application_id}/interviews`, body));
       } catch (error) {
         return errorResult(error);
       }

@@ -111,7 +111,7 @@ describe("interviews tools", () => {
   });
 
   describe("create_interview", () => {
-    it("posts the body to /v1/interviews", async () => {
+    it("posts to /v1/applications/:application_id/interviews without application_id in body", async () => {
       (mockKula.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: { id: 99 } });
       const args = {
         organizer_id: 1,
@@ -124,7 +124,8 @@ describe("interviews tools", () => {
         interviewer_ids: [1],
       };
       await client.callTool({ name: "create_interview", arguments: args });
-      expect(mockKula.post).toHaveBeenCalledWith("/v1/interviews", expect.objectContaining(args));
+      const { application_id, ...body } = args;
+      expect(mockKula.post).toHaveBeenCalledWith(`/v1/applications/${application_id}/interviews`, body);
     });
   });
 
