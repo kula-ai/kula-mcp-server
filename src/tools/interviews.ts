@@ -96,6 +96,58 @@ export function register(server: McpServer, client: KulaClient) {
   );
 
   server.registerTool(
+    "list_application_interviews",
+    {
+      description:
+        "List the interviews scheduled on a specific application. Same as `list_interviews` but scoped to one application (the `application_id` goes in the path, not as a filter). Cancelled interviews are included by default — use `meeting_status=cancelled` etc. to filter.",
+      inputSchema: {
+        application_id: z.number().int().describe("ID of the application (candidate's submission to a job). Use list_applications to discover."),
+        page: z.string().optional().describe("Page number (default: 1)"),
+        limit: z.string().optional().describe("Items per page (default: 20, max: 100)"),
+        interviewer_ids: z.string().optional().describe("Comma-separated user IDs of participants"),
+        organizer_ids: z.string().optional().describe("Comma-separated user IDs (the user who scheduled the interview)"),
+        meeting_status: z.string().optional().describe(`Comma-separated statuses: ${VALID_STATUSES.join(", ")}`),
+        kind: z.string().optional().describe(`Comma-separated kinds: ${VALID_LIST_KINDS.join(", ")}`),
+        location: z.string().optional().describe(`Comma-separated locations: ${VALID_LOCATIONS.join(", ")}`),
+        ai_note_taker_enabled: z.enum(["true", "false"]).optional().describe("Filter by AI note-taker flag"),
+        start_time_after: z.string().optional().describe("Inclusive lower bound on start_time (ISO 8601)"),
+        start_time_before: z.string().optional().describe("Inclusive upper bound on start_time (ISO 8601)"),
+        created_after: z.string().optional().describe("Filter by created date (ISO 8601 inclusive)"),
+        created_before: z.string().optional().describe("Filter by created date (ISO 8601 inclusive)"),
+        updated_after: z.string().optional().describe("Filter by updated date (ISO 8601 inclusive)"),
+        updated_before: z.string().optional().describe("Filter by updated date (ISO 8601 inclusive)"),
+        sort_by: z.enum(VALID_SORT_BY).optional().describe("Sort field (default: created_at)"),
+        sort_order: z.enum(VALID_SORT_ORDER).optional().describe("Sort direction (default: desc)"),
+      },
+    },
+    async ({ application_id, ...args }) => {
+      try {
+        const params: Record<string, string | string[] | number[] | boolean | undefined> = {
+          page: args.page,
+          limit: args.limit,
+          start_time_after: args.start_time_after,
+          start_time_before: args.start_time_before,
+          created_after: args.created_after,
+          created_before: args.created_before,
+          updated_after: args.updated_after,
+          updated_before: args.updated_before,
+          sort_by: args.sort_by,
+          sort_order: args.sort_order,
+        };
+        if (args.interviewer_ids !== undefined) params.interviewer_ids = csvNumberArray(args.interviewer_ids);
+        if (args.organizer_ids !== undefined) params.organizer_ids = csvNumberArray(args.organizer_ids);
+        if (args.meeting_status !== undefined) params.meeting_status = csvStringArray(args.meeting_status);
+        if (args.kind !== undefined) params.kind = csvStringArray(args.kind);
+        if (args.location !== undefined) params.location = csvStringArray(args.location);
+        if (args.ai_note_taker_enabled !== undefined) params.ai_note_taker_enabled = args.ai_note_taker_enabled === "true";
+        return okResult(await client.get(`/v1/applications/${application_id}/interviews`, params));
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.registerTool(
     "get_interview",
     {
       description: "Get full details for a single interview, including interviewers, candidate, conference URL, scorecard refs.",
@@ -158,9 +210,9 @@ export function register(server: McpServer, client: KulaClient) {
         scorecard_template_id: z.number().int().optional().describe("Scorecard template ID. Silently ignored when stage_activity_id is set."),
       },
     },
-    async (body) => {
+    async ({ application_id, ...body }) => {
       try {
-        return okResult(await client.post("/v1/interviews", body));
+        return okResult(await client.post(`/v1/applications/${application_id}/interviews`, body));
       } catch (error) {
         return errorResult(error);
       }

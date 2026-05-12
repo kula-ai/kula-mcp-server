@@ -102,6 +102,47 @@ describe("interviews tools", () => {
     });
   });
 
+  describe("list_application_interviews", () => {
+    it("calls GET /v1/applications/:application_id/interviews forwarding every optional filter", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: [] });
+      await client.callTool({
+        name: "list_application_interviews",
+        arguments: {
+          application_id: 16966,
+          page: "1", limit: "10",
+          interviewer_ids: "4,5", organizer_ids: "9",
+          meeting_status: "ended,cancelled", kind: "panel", location: "zoom",
+          ai_note_taker_enabled: "true",
+          start_time_after: "2026-05-01T00:00:00Z", start_time_before: "2026-05-31T00:00:00Z",
+          created_after: "2026-01-01T00:00:00Z", created_before: "2026-12-31T00:00:00Z",
+          updated_after: "2026-01-01T00:00:00Z", updated_before: "2026-12-31T00:00:00Z",
+          sort_by: "start_time", sort_order: "asc",
+        },
+      });
+      expect(mockKula.get).toHaveBeenCalledWith(
+        "/v1/applications/16966/interviews",
+        expect.objectContaining({
+          interviewer_ids: [4, 5], organizer_ids: [9],
+          meeting_status: ["ended", "cancelled"], kind: ["panel"], location: ["zoom"],
+          ai_note_taker_enabled: true, limit: "10",
+        })
+      );
+    });
+
+    it("returns isError on client failure", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("boom"));
+      const result = await client.callTool({ name: "list_application_interviews", arguments: { application_id: 1 } });
+      expect(result.isError).toBe(true);
+    });
+
+    it("stringifies a non-Error rejection", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockRejectedValueOnce("plain failure");
+      const result = await client.callTool({ name: "list_application_interviews", arguments: { application_id: 1 } });
+      expect(result.isError).toBe(true);
+      expect((result.content as Array<{ text: string }>)[0].text).toContain("plain failure");
+    });
+  });
+
   describe("get_interview", () => {
     it("calls GET /v1/interviews/:id", async () => {
       (mockKula.get as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: { id: 7 } });
@@ -111,7 +152,7 @@ describe("interviews tools", () => {
   });
 
   describe("create_interview", () => {
-    it("posts the body to /v1/interviews", async () => {
+    it("posts to /v1/applications/:application_id/interviews", async () => {
       (mockKula.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: { id: 99 } });
       const args = {
         organizer_id: 1,
@@ -124,7 +165,8 @@ describe("interviews tools", () => {
         interviewer_ids: [1],
       };
       await client.callTool({ name: "create_interview", arguments: args });
-      expect(mockKula.post).toHaveBeenCalledWith("/v1/interviews", expect.objectContaining(args));
+      const { application_id, ...body } = args;
+      expect(mockKula.post).toHaveBeenCalledWith(`/v1/applications/${application_id}/interviews`, body);
     });
   });
 
