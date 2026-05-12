@@ -103,25 +103,28 @@ describe("interviews tools", () => {
   });
 
   describe("list_application_interviews", () => {
-    it("calls GET /v1/applications/:application_id/interviews with filters", async () => {
+    it("calls GET /v1/applications/:application_id/interviews forwarding every optional filter", async () => {
       (mockKula.get as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: [] });
       await client.callTool({
         name: "list_application_interviews",
         arguments: {
           application_id: 16966,
-          interviewer_ids: "4,5",
-          meeting_status: "ended,cancelled",
+          page: "1", limit: "10",
+          interviewer_ids: "4,5", organizer_ids: "9",
+          meeting_status: "ended,cancelled", kind: "panel", location: "zoom",
           ai_note_taker_enabled: "true",
-          limit: "10",
+          start_time_after: "2026-05-01T00:00:00Z", start_time_before: "2026-05-31T00:00:00Z",
+          created_after: "2026-01-01T00:00:00Z", created_before: "2026-12-31T00:00:00Z",
+          updated_after: "2026-01-01T00:00:00Z", updated_before: "2026-12-31T00:00:00Z",
+          sort_by: "start_time", sort_order: "asc",
         },
       });
       expect(mockKula.get).toHaveBeenCalledWith(
         "/v1/applications/16966/interviews",
         expect.objectContaining({
-          interviewer_ids: [4, 5],
-          meeting_status: ["ended", "cancelled"],
-          ai_note_taker_enabled: true,
-          limit: "10",
+          interviewer_ids: [4, 5], organizer_ids: [9],
+          meeting_status: ["ended", "cancelled"], kind: ["panel"], location: ["zoom"],
+          ai_note_taker_enabled: true, limit: "10",
         })
       );
     });
@@ -130,6 +133,13 @@ describe("interviews tools", () => {
       (mockKula.get as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("boom"));
       const result = await client.callTool({ name: "list_application_interviews", arguments: { application_id: 1 } });
       expect(result.isError).toBe(true);
+    });
+
+    it("stringifies a non-Error rejection", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockRejectedValueOnce("plain failure");
+      const result = await client.callTool({ name: "list_application_interviews", arguments: { application_id: 1 } });
+      expect(result.isError).toBe(true);
+      expect((result.content as Array<{ text: string }>)[0].text).toContain("plain failure");
     });
   });
 
