@@ -17,6 +17,7 @@ import { register as registerInterviews } from "./tools/interviews.js";
 import { register as registerTemplates } from "./tools/templates.js";
 import { register as registerUsers } from "./tools/users.js";
 import { register as registerRoles } from "./tools/roles.js";
+import { register as registerLookups } from "./tools/lookups.js";
 
 const apiKey = process.env.KULA_API_KEY;
 if (!apiKey) {
@@ -49,6 +50,7 @@ registerInterviews(server, client);
 registerTemplates(server, client);
 registerUsers(server, client);
 registerRoles(server, client);
+registerLookups(server, client);
 
 // Start the server with STDIO transport
 const transport = new StdioServerTransport();
