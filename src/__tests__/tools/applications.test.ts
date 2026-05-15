@@ -137,6 +137,41 @@ describe("applications tools", () => {
     });
   });
 
+  describe("upload_application_resume", () => {
+    it("posts multipart form data with file blob", async () => {
+      const fs = await import("node:fs/promises");
+      const os = await import("node:os");
+      const path = await import("node:path");
+      const tmpFile = path.join(os.tmpdir(), `mcp-app-resume-${Date.now()}.pdf`);
+      await fs.writeFile(tmpFile, "%PDF-1.4 minimal");
+
+      (mockKula.postFormData as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        contact_resume_id: 42,
+      });
+
+      const result = await client.callTool({
+        name: "upload_application_resume",
+        arguments: { application_id: "7", resume_path: tmpFile },
+      });
+
+      const call = (mockKula.postFormData as ReturnType<typeof vi.fn>).mock.calls.at(-1);
+      expect(call[0]).toBe("/v1/applications/7/resume");
+      const fd = call[1] as FormData;
+      expect(fd.get("file")).toBeInstanceOf(Blob);
+      expect(result.isError).toBeFalsy();
+
+      await fs.unlink(tmpFile);
+    });
+
+    it("returns isError when resume_path does not exist", async () => {
+      const result = await client.callTool({
+        name: "upload_application_resume",
+        arguments: { application_id: "7", resume_path: "/tmp/does-not-exist-mcp-app.pdf" },
+      });
+      expect(result.isError).toBe(true);
+    });
+  });
+
   describe("update_application_note", () => {
     it("patches note body to correct endpoint", async () => {
       (mockKula.patch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ id: "n-1" });

@@ -162,6 +162,55 @@ export function register(server: McpServer, client: KulaClient) {
   );
 
   server.registerTool(
+    "upload_application_resume",
+    {
+      description:
+        "Upload a resume file to an existing application. Creates a new ContactResume on the candidate, links it to this application (`contact_resume_id`), kicks off resume parsing, and promotes it to the candidate's primary_resume when none exists. Accepts PDF or DOCX up to 20 MB.",
+      inputSchema: {
+        application_id: z.string().describe("Application ID to attach the resume to"),
+        resume_path: z
+          .string()
+          .describe(
+            "Absolute path to a local resume file (PDF or DOCX, max 20 MB). Uploaded as multipart/form-data.",
+          ),
+      },
+    },
+    async ({ application_id, resume_path }) => {
+      try {
+        const fs = await import("node:fs/promises");
+        const path = await import("node:path");
+        const fileBuffer = await fs.readFile(resume_path);
+        const fileName = path.basename(resume_path);
+        const ext = path.extname(resume_path).toLowerCase();
+        const contentType =
+          ext === ".pdf"
+            ? "application/pdf"
+            : ext === ".docx"
+              ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              : "application/octet-stream";
+
+        const formData = new FormData();
+        formData.append(
+          "file",
+          new Blob([fileBuffer], { type: contentType }),
+          fileName,
+        );
+
+        const data = await client.postFormData(
+          `/v1/applications/${application_id}/resume`,
+          formData,
+        );
+        return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+      } catch (error) {
+        return {
+          content: [{ type: "text", text: `Error: ${error instanceof Error ? error.message : String(error)}` }],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  server.registerTool(
     "update_application_note",
     {
       description: "Update an existing note on an application.",
