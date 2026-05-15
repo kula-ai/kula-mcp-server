@@ -139,6 +139,18 @@ describe("organization tools", () => {
       expect(call[1]["status[]"]).toEqual(["active", "deactivated"]);
     });
 
+    it("passes role filter as array", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: [] });
+
+      await client.callTool({
+        name: "list_users",
+        arguments: { role: "recruiter,hiring_manager" },
+      });
+
+      const call = (mockKula.get as ReturnType<typeof vi.fn>).mock.calls.at(-1);
+      expect(call[1]["role[]"]).toEqual(["recruiter", "hiring_manager"]);
+    });
+
     it("returns isError true on failure", async () => {
       (mockKula.get as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("fail"));
       const result = await client.callTool({ name: "list_users", arguments: {} });

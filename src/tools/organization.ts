@@ -239,16 +239,18 @@ export function register(server: McpServer, client: KulaClient) {
         sort_by: z.enum(["created_at", "updated_at"]).optional().describe("Field to sort by (default: created_at)"),
         sort_order: z.enum(["asc", "desc"]).optional().describe("Sort direction"),
         status: z.string().optional().describe("Comma-separated user statuses to filter by: active, pending, deactivated, imported. Defaults to active when omitted."),
+        role: z.string().optional().describe("Comma-separated user roles to filter by: owner, admin, recruiter, hiring_manager, employee, external_collaborator. Multiple values are OR'd together. Useful for resolving primary_recruiter_ids or hiring_manager_ids on jobs / requisitions / interviews."),
         created_after: z.string().optional().describe("Filter by created date (ISO 8601, inclusive lower bound)"),
         created_before: z.string().optional().describe("Filter by created date (ISO 8601, inclusive upper bound)"),
         updated_after: z.string().optional().describe("Filter by updated date (ISO 8601, inclusive lower bound)"),
         updated_before: z.string().optional().describe("Filter by updated date (ISO 8601, inclusive upper bound)"),
       },
     },
-    async ({ page, limit, sort_by, sort_order, status, created_after, created_before, updated_after, updated_before }) => {
+    async ({ page, limit, sort_by, sort_order, status, role, created_after, created_before, updated_after, updated_before }) => {
       try {
         const params: Record<string, string | string[] | undefined> = { page, limit, sort_by, sort_order, created_after, created_before, updated_after, updated_before };
         if (status !== undefined) params["status[]"] = status.split(",").map((s) => s.trim());
+        if (role !== undefined) params["role[]"] = role.split(",").map((s) => s.trim());
         const data = await client.get("/v1/users", params);
         return {
           content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
