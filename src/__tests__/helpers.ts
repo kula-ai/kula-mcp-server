@@ -11,6 +11,7 @@ export function createMockClient(): KulaClient {
     patch: vi.fn(),
     delete: vi.fn(),
     postFormData: vi.fn(),
+    patchFormData: vi.fn(),
   } as unknown as KulaClient;
 }
 

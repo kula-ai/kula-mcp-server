@@ -261,7 +261,9 @@ export function register(server: McpServer, client: KulaClient) {
     {
       description:
         "Update an existing candidate's profile. All fields are optional — only send the fields you want to change. " +
-        "Returns the updated candidate object.",
+        "Optionally attach a resume by passing a local file path (PDF or DOCX, max 20 MB); when `application_id` is also set, " +
+        "the new resume is linked to that specific application. `is_primary` controls whether the new resume becomes the " +
+        "candidate's primary resume. Returns the updated candidate object.",
       inputSchema: {
         id: z.string().describe("Candidate ID to update"),
         first_name: z.string().optional().describe("Candidate's first name"),
@@ -290,19 +292,84 @@ export function register(server: McpServer, client: KulaClient) {
           .optional()
           .describe("Candidate location using places IDs"),
         additional_info: z.record(z.unknown()).optional().describe("Custom field values as key-value pairs"),
+        resume_path: z
+          .string()
+          .optional()
+          .describe(
+            "Absolute path to a local resume file (PDF or DOCX, max 20 MB). When supplied, the file is uploaded as multipart/form-data and a new ContactResume is attached to the candidate.",
+          ),
+        is_primary: z
+          .boolean()
+          .optional()
+          .describe(
+            "Only meaningful when `resume_path` is set. true = promote the new resume to the candidate's primary_resume; false = never promote; omitted = promote only if the candidate has no primary resume.",
+          ),
+        application_id: z
+          .string()
+          .optional()
+          .describe(
+            "Only meaningful when `resume_path` is set. When provided, the new resume is linked to that specific application (`contact_resume_id`). Must belong to the same candidate.",
+          ),
       },
     },
-    async ({ id, first_name, last_name, email, phone_number, title, tags, skills, candidate_source_id, social_urls, location, additional_info }) => {
+    async ({ id, first_name, last_name, email, phone_number, title, tags, skills, candidate_source_id, social_urls, location, additional_info, resume_path, is_primary, application_id }) => {
       try {
-        const body: Record<string, unknown> = {};
-        if (first_name !== undefined) body.first_name = first_name;
-        if (last_name !== undefined) body.last_name = last_name;
-        if (email !== undefined) body.email = email;
-        if (phone_number !== undefined) body.phone_number = phone_number;
-        if (title !== undefined) body.title = title;
-        if (tags !== undefined) body.tags = tags;
-        if (skills !== undefined) body.skills = skills;
+        const fields: Record<string, string> = {};
+        if (first_name !== undefined) fields.first_name = first_name;
+        if (last_name !== undefined) fields.last_name = last_name;
+        if (email !== undefined) fields.email = email;
+        if (phone_number !== undefined) fields.phone_number = phone_number;
+        if (title !== undefined) fields.title = title;
+        if (tags !== undefined) fields.tags = tags;
+        if (skills !== undefined) fields.skills = skills;
+        if (candidate_source_id !== undefined) fields.candidate_source_id = candidate_source_id;
+        if (application_id !== undefined) fields.application_id = application_id;
+        if (is_primary !== undefined) fields.is_primary = String(is_primary);
+
+        // Multipart path when a resume file is attached
+        if (resume_path !== undefined) {
+          const fs = await import("node:fs/promises");
+          const path = await import("node:path");
+          const fileBuffer = await fs.readFile(resume_path);
+          const fileName = path.basename(resume_path);
+          const ext = path.extname(resume_path).toLowerCase();
+          const contentType =
+            ext === ".pdf"
+              ? "application/pdf"
+              : ext === ".docx"
+                ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                : "application/octet-stream";
+
+          const formData = new FormData();
+          for (const [k, v] of Object.entries(fields)) {
+            formData.append(k, v);
+          }
+          if (social_urls !== undefined) {
+            formData.append("social_urls", JSON.stringify(social_urls));
+          }
+          if (location !== undefined) {
+            formData.append("location", JSON.stringify(location));
+          }
+          if (additional_info !== undefined) {
+            formData.append("additional_info", JSON.stringify(additional_info));
+          }
+          formData.append(
+            "resume",
+            new Blob([fileBuffer], { type: contentType }),
+            fileName,
+          );
+
+          const data = await client.patchFormData(`/v1/candidates/${id}`, formData);
+          return {
+            content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
+          };
+        }
+
+        // JSON path when no resume — preserves existing behavior
+        const body: Record<string, unknown> = { ...fields };
         if (candidate_source_id !== undefined) body.candidate_source_id = Number(candidate_source_id);
+        if (application_id !== undefined) body.application_id = Number(application_id);
+        if (is_primary !== undefined) body.is_primary = is_primary;
         if (social_urls !== undefined) body.social_urls = social_urls;
         if (location !== undefined) {
           body.location = {

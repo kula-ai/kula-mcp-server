@@ -80,9 +80,21 @@ export class KulaClient {
   }
 
   async postFormData(path: string, formData: FormData): Promise<unknown> {
+    return this.requestFormData("POST", path, formData);
+  }
+
+  async patchFormData(path: string, formData: FormData): Promise<unknown> {
+    return this.requestFormData("PATCH", path, formData);
+  }
+
+  private async requestFormData(
+    method: "POST" | "PATCH",
+    path: string,
+    formData: FormData,
+  ): Promise<unknown> {
     const url = new URL(path, this.baseUrl);
     const response = await fetch(url.toString(), {
-      method: "POST",
+      method,
       headers: {
         Authorization: `Bearer ${this.apiKey}`,
       },
@@ -91,9 +103,7 @@ export class KulaClient {
 
     if (!response.ok) {
       const text = await response.text();
-      throw new Error(
-        `Kula API error ${response.status}: ${text}`
-      );
+      throw new Error(`Kula API error ${response.status}: ${text}`);
     }
 
     const contentType = response.headers.get("content-type");

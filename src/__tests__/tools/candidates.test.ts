@@ -403,6 +403,51 @@ describe("candidates tools", () => {
       const result = await client.callTool({ name: "update_candidate", arguments: { id: "x" } });
       expect(result.isError).toBe(true);
     });
+
+    it("sends is_primary and application_id via JSON when no resume_path", async () => {
+      (mockKula.patch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ id: "cand-10" });
+
+      await client.callTool({
+        name: "update_candidate",
+        arguments: { id: "cand-10", is_primary: true, application_id: "42" },
+      });
+
+      const call = (mockKula.patch as ReturnType<typeof vi.fn>).mock.calls.at(-1);
+      expect(call[1].is_primary).toBe(true);
+      expect(call[1].application_id).toBe(42);
+    });
+
+    it("uploads multipart when resume_path is provided", async () => {
+      const fs = await import("node:fs/promises");
+      const os = await import("node:os");
+      const path = await import("node:path");
+      const tmpFile = path.join(os.tmpdir(), `mcp-test-resume-${Date.now()}.pdf`);
+      await fs.writeFile(tmpFile, "%PDF-1.4 minimal");
+
+      (mockKula.patchFormData as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ id: "cand-11" });
+
+      await client.callTool({
+        name: "update_candidate",
+        arguments: { id: "cand-11", resume_path: tmpFile, is_primary: true, application_id: "99" },
+      });
+
+      const call = (mockKula.patchFormData as ReturnType<typeof vi.fn>).mock.calls.at(-1);
+      expect(call[0]).toBe("/v1/candidates/cand-11");
+      const fd = call[1] as FormData;
+      expect(fd.get("is_primary")).toBe("true");
+      expect(fd.get("application_id")).toBe("99");
+      expect(fd.get("resume")).toBeInstanceOf(Blob);
+
+      await fs.unlink(tmpFile);
+    });
+
+    it("returns isError when resume_path does not exist", async () => {
+      const result = await client.callTool({
+        name: "update_candidate",
+        arguments: { id: "x", resume_path: "/tmp/does-not-exist-mcp-test.pdf" },
+      });
+      expect(result.isError).toBe(true);
+    });
   });
 
   describe("error handling", () => {
