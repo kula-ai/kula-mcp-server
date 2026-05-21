@@ -173,9 +173,9 @@ export function register(server: McpServer, client: KulaClient) {
         "**ASK THE USER BEFORE CALLING — gather and confirm every input; do not invent IDs, times, or settings:**\n" +
         "1. **Plan-driven or ad-hoc?** ALWAYS ask first whether this interview should come from an interview-plan activity, or be an ad-hoc interview. If they're unsure, call `get_interview_plan` for the job and show the activities so they can choose. This decides which fields are required.\n" +
         "2. **If plan-driven:** ask which activity → set `stage_activity_id`. The activity supplies `kind`, `location`, `duration_minutes`, `interviewer_ids`, `office_id`, `name`, note-taker, AI assist, calendar-invite templates, and scorecard config — all inherited. Only ask the user for these if they want to OVERRIDE a specific value. The interview is placed on the activity's stage. (`scorecard_template_id` is ignored here.)\n" +
-        "3. **If ad-hoc:** ask the user for the required fields — `kind`, `location`, `duration_minutes`, `interviewer_ids`. Then conditionally: location=onsite → ask `office_id`; location=zoom → ask `host_id` (must be one of the interviewers); location=hackerrank → ask `hackerrank_template_id`.\n" +
+        "3. **If ad-hoc:** ask the user for the required fields — `kind`, `location`, `duration_minutes`, `interviewer_ids`, and both calendar-invite templates `candidate_template_id` + `interviewer_template_id` (from `list_email_templates`; all required for ad-hoc). Then conditionally: location=onsite → ask `office_id`; location=zoom → ask `host_id` (must be one of the interviewers); location=hackerrank → ask `hackerrank_template_id`.\n" +
         "4. **Always confirm:** `organizer_id`, `application_id`, `timezone`, and a `start_time` chosen by running `check_interviewers_availability` first (don't pick a time blindly).\n" +
-        "5. **Ask about optional setup** (mention plan-driven defaults from the activity unless overridden): calendar-invite templates `interviewer_template_id` / `candidate_template_id` (from `list_email_templates`), AI note-taker (`ai_note_taker_enabled`), AI scorecard assist (`ai_scorecard_assist_enabled`), interview `name`, and `calendar_event_visibility`.\n" +
+        "5. **Ask about optional setup** (mention plan-driven defaults from the activity unless overridden): AI note-taker (`ai_note_taker_enabled`), AI scorecard assist (`ai_scorecard_assist_enabled`), interview `name`, and `calendar_event_visibility`.\n" +
         "6. Only call this tool once the user has confirmed the path and all needed values.\n" +
         "\n" +
         "**Where to discover IDs:**\n" +
@@ -209,8 +209,8 @@ export function register(server: McpServer, client: KulaClient) {
         calendar_event_visibility: z.enum(VALID_VISIBILITIES).optional().describe("Calendar invite visibility"),
         ai_note_taker_enabled: z.boolean().optional().describe("Enable the AI note-taker. Inherited from the activity when omitted and stage_activity_id is set."),
         ai_scorecard_assist_enabled: z.boolean().optional().describe("Allow AI assistance when filling scorecards. Inherited from the activity when omitted and stage_activity_id is set."),
-        interviewer_template_id: z.number().int().optional().describe("Email template ID for interviewer invite body. Inherited from the activity when omitted and stage_activity_id is set."),
-        candidate_template_id: z.number().int().optional().describe("Email template ID for candidate invite body. Inherited from the activity when omitted and stage_activity_id is set."),
+        interviewer_template_id: z.number().int().optional().describe("Email template ID for interviewer invite body. Required when stage_activity_id is not set; inherited from the activity when omitted and stage_activity_id is set."),
+        candidate_template_id: z.number().int().optional().describe("Email template ID for candidate invite body. Required when stage_activity_id is not set; inherited from the activity when omitted and stage_activity_id is set."),
         scorecard_template_id: z.number().int().optional().describe("Scorecard template ID. Silently ignored when stage_activity_id is set (scorecard config inherits from the activity)."),
       },
     },
