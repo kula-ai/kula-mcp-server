@@ -168,6 +168,20 @@ describe("interviews tools", () => {
       const { application_id, ...body } = args;
       expect(mockKula.post).toHaveBeenCalledWith(`/v1/applications/${application_id}/interviews`, body);
     });
+
+    it("accepts a plan-driven call without kind/location/duration/interviewer_ids", async () => {
+      (mockKula.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: { id: 100 } });
+      const args = {
+        organizer_id: 1,
+        application_id: 16966,
+        start_time: "2026-05-12T17:00:00Z",
+        timezone: "America/Los_Angeles",
+        stage_activity_id: 555,
+      };
+      await client.callTool({ name: "create_interview", arguments: args });
+      const { application_id, ...body } = args;
+      expect(mockKula.post).toHaveBeenCalledWith(`/v1/applications/${application_id}/interviews`, body);
+    });
   });
 
   describe("update_interview", () => {
