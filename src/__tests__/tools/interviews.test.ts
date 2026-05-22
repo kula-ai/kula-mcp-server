@@ -182,6 +182,61 @@ describe("interviews tools", () => {
       const { application_id, ...body } = args;
       expect(mockKula.post).toHaveBeenCalledWith(`/v1/applications/${application_id}/interviews`, body);
     });
+
+    it("forwards end_time in place of duration_minutes", async () => {
+      (mockKula.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: { id: 101 } });
+      const args = {
+        organizer_id: 1,
+        application_id: 16966,
+        start_time: "2026-05-12T17:00:00Z",
+        end_time: "2026-05-12T17:45:00Z",
+        timezone: "America/Los_Angeles",
+        kind: "one_on_one",
+        location: "google_meet",
+        interviewer_ids: [1],
+      };
+      await client.callTool({ name: "create_interview", arguments: args });
+      const { application_id, ...body } = args;
+      expect(mockKula.post).toHaveBeenCalledWith(`/v1/applications/${application_id}/interviews`, body);
+    });
+
+    it("forwards both end_time and duration_minutes without stripping either (server resolves precedence)", async () => {
+      (mockKula.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: { id: 102 } });
+      const args = {
+        organizer_id: 1,
+        application_id: 16966,
+        start_time: "2026-05-12T17:00:00Z",
+        end_time: "2026-05-12T17:30:00Z",
+        duration_minutes: 90,
+        timezone: "UTC",
+        kind: "one_on_one",
+        location: "google_meet",
+        interviewer_ids: [1],
+      };
+      await client.callTool({ name: "create_interview", arguments: args });
+      const { application_id, ...body } = args;
+      expect(mockKula.post).toHaveBeenCalledWith(`/v1/applications/${application_id}/interviews`, body);
+    });
+
+    it("accepts a 5-minute and a non-multiple-of-15 duration_minutes", async () => {
+      (mockKula.post as ReturnType<typeof vi.fn>).mockResolvedValue({ data: { id: 103 } });
+      for (const duration_minutes of [5, 22]) {
+        const result = await client.callTool({
+          name: "create_interview",
+          arguments: {
+            organizer_id: 1,
+            application_id: 16966,
+            start_time: "2026-05-12T17:00:00Z",
+            duration_minutes,
+            timezone: "UTC",
+            kind: "one_on_one",
+            location: "google_meet",
+            interviewer_ids: [1],
+          },
+        });
+        expect(result.isError).toBeFalsy();
+      }
+    });
   });
 
   describe("update_interview", () => {
