@@ -133,4 +133,35 @@ export function register(server: McpServer, client: KulaClient) {
       }
     }
   );
+
+  server.registerTool(
+    "get_job_hiring_team",
+    {
+      description:
+        "Retrieve the hiring team for a specific job, grouped by role: hiring managers, recruiters, coordinators, and external recruiters. " +
+        "Each member includes id, name, email, and an is_primary flag marking the primary hiring manager and primary recruiter. " +
+        "Use this to find who owns or works on a job.",
+      inputSchema: {
+        job_id: z.string().describe("Job ID"),
+      },
+    },
+    async ({ job_id }) => {
+      try {
+        const data = await client.get(`/v1/jobs/${job_id}/hiring-team`);
+        return {
+          content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
+        };
+      } catch (error) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Error: ${error instanceof Error ? error.message : String(error)}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
 }

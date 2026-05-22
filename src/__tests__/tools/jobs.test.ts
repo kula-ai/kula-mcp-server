@@ -198,6 +198,34 @@ describe("jobs tools", () => {
     });
   });
 
+  describe("get_job_hiring_team", () => {
+    it("calls the hiring-team endpoint with job ID", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        hiring_managers: [{ id: 1, name: "Ada", is_primary: true }],
+        recruiters: [],
+        coordinators: [],
+        external_recruiters: [],
+      });
+
+      const result = await client.callTool({
+        name: "get_job_hiring_team",
+        arguments: { job_id: "job-42" },
+      });
+
+      expect(mockKula.get).toHaveBeenCalledWith("/v1/jobs/job-42/hiring-team");
+
+      const text = (result.content as Array<{ type: string; text: string }>)[0]
+        .text;
+      expect(JSON.parse(text).hiring_managers[0].is_primary).toBe(true);
+    });
+
+    it("handles non-Error throws in get_job_hiring_team", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockRejectedValueOnce("fail");
+      const result = await client.callTool({ name: "get_job_hiring_team", arguments: { job_id: "x" } });
+      expect(result.isError).toBe(true);
+    });
+  });
+
   describe("error handling", () => {
     it("returns isError true when client throws", async () => {
       (mockKula.get as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
