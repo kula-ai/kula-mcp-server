@@ -108,7 +108,8 @@ export function register(server: McpServer, client: KulaClient) {
     "get_job",
     {
       description:
-        "Retrieve full details of a specific job by ID, including description and interview stages. " +
+        "Retrieve full details of a specific job by ID, including description, interview stages, and the hiring team " +
+        "(hiring managers, recruiters, coordinators, and external recruiters, grouped by role with an is_primary flag). " +
         "Use this when you already have the job ID. To find a job by title, use search_jobs first.",
       inputSchema: {
         id: z.string().describe("Job ID"),
