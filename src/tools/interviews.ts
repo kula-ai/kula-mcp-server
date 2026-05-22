@@ -229,6 +229,7 @@ export function register(server: McpServer, client: KulaClient) {
     {
       description:
         "Update an existing interview. All fields are optional — only the supplied fields are modified. " +
+        "To change the length, supply `end_time` or `duration_minutes` — `end_time` wins when both are sent. " +
         "Immutable fields (cannot be changed after creation): `organizer_id`, `application_id`, `job_id`, `candidate_id`, `stage_activity_id`, `scorecard_template_id`. " +
         "Cancelled interviews cannot be updated (returns 422 err_interview_cancelled).",
       inputSchema: {
