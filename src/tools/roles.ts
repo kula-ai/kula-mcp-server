@@ -22,7 +22,7 @@ export function register(server: McpServer, client: KulaClient) {
   server.registerTool(
     "list_roles",
     {
-      description: "List roles available in the account. Use this to discover valid org_role_id values for create_user and update_user.",
+      description: "List roles available in the account. Use this to discover valid role_id values for create_user and update_user.",
       inputSchema: {
         page: z.string().optional().describe("Page number"),
         limit: z.string().optional().describe("Items per page"),
@@ -46,7 +46,7 @@ export function register(server: McpServer, client: KulaClient) {
   server.registerTool(
     "get_role",
     {
-      description: "Retrieve a single role by ID. The response includes a permissions object mapping each permission key to a boolean indicating whether it is granted by this role.",
+      description: "Retrieve a single role by ID. Response includes a `permissions` object mapping `resource:action` keys (e.g. `users:manage`, `jobs:read`) to booleans indicating whether the role grants each one.",
       inputSchema: {
         id: z.string().describe("Role ID"),
       },

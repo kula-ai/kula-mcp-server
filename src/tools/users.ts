@@ -42,7 +42,7 @@ export function register(server: McpServer, client: KulaClient) {
         role_id: z.string().optional().describe("Comma-separated role IDs to filter by"),
         department_id: z.string().optional().describe("Comma-separated department IDs to filter by"),
         office_id: z.string().optional().describe("Comma-separated office IDs to filter by"),
-        permission: z.string().optional().describe("Comma-separated permission keys. Matches users whose role grants any of the listed permissions."),
+        permission: z.string().optional().describe("Comma-separated permission keys in `resource:action` format (e.g. `users:manage,jobs:read`). Matches users whose role grants any of the listed permissions."),
         query: z.string().optional().describe("Full-text search across user name and email"),
         created_after: z.string().optional().describe("ISO 8601 datetime lower bound on created_at"),
         created_before: z.string().optional().describe("ISO 8601 datetime upper bound on created_at"),
@@ -70,7 +70,7 @@ export function register(server: McpServer, client: KulaClient) {
   server.registerTool(
     "get_user",
     {
-      description: "Retrieve a single user by ID.",
+      description: "Retrieve a single user by ID. Response includes a `permissions` array of `resource:action` keys granted by the user's role.",
       inputSchema: {
         id: z.string().describe("User ID"),
       },
@@ -88,11 +88,11 @@ export function register(server: McpServer, client: KulaClient) {
     "create_user",
     {
       description:
-        "Invite a new user to the account. The user is created in the pending state and sent an invitation email. Requires email, first_name, and org_role_id.",
+        "Invite a new user to the account. The user is created in the pending state and sent an invitation email. Requires email, first_name, and role_id.",
       inputSchema: {
         email: z.string().describe("Email address of the user"),
         first_name: z.string().describe("First name of the user"),
-        org_role_id: z.number().describe("Role to assign to the user. Use list_roles to discover valid IDs."),
+        role_id: z.number().describe("ID of the role to assign to the user. Use list_roles to discover valid IDs."),
         last_name: z.string().optional().describe("Last name of the user"),
         job_title: z.string().optional().describe("Job title of the user"),
         time_zone: z.string().optional().describe("IANA timezone identifier (e.g. America/Los_Angeles)"),
@@ -120,7 +120,7 @@ export function register(server: McpServer, client: KulaClient) {
         last_name: z.string().optional().describe("Last name of the user"),
         job_title: z.string().optional().describe("Job title of the user (pass null-equivalent by omitting if not changing)"),
         time_zone: z.string().optional().describe("IANA timezone identifier"),
-        org_role_id: z.number().optional().describe("Role to assign to the user"),
+        role_id: z.number().optional().describe("ID of the role to assign to the user. Use list_roles to discover valid IDs."),
         department_id: z.number().optional().describe("Department to assign the user to"),
         office_id: z.number().optional().describe("Office to assign the user to"),
         reporting_manager_id: z.number().optional().describe("User the user reports to"),

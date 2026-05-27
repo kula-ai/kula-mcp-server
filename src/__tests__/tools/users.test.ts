@@ -37,7 +37,7 @@ describe("users tools", () => {
           role_id: "1,2",
           department_id: "10",
           office_id: "20,30",
-          permission: "manage_jobs,manage_org_users",
+          permission: "jobs:manage,users:manage",
           query: "ada",
         },
       });
@@ -47,7 +47,7 @@ describe("users tools", () => {
       expect(call[1]["role_id[]"]).toEqual([1, 2]);
       expect(call[1]["department_id[]"]).toEqual([10]);
       expect(call[1]["office_id[]"]).toEqual([20, 30]);
-      expect(call[1]["permission[]"]).toEqual(["manage_jobs", "manage_org_users"]);
+      expect(call[1]["permission[]"]).toEqual(["jobs:manage", "users:manage"]);
       expect(call[1].query).toBe("ada");
     });
 
@@ -71,11 +71,11 @@ describe("users tools", () => {
       (mockKula.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: { id: 1 } });
       await client.callTool({
         name: "create_user",
-        arguments: { email: "a@b.com", first_name: "Ada", org_role_id: 3, department_id: 5 },
+        arguments: { email: "a@b.com", first_name: "Ada", role_id: 3, department_id: 5 },
       });
       const call = (mockKula.post as ReturnType<typeof vi.fn>).mock.calls.at(-1);
       expect(call[0]).toBe("/v1/users");
-      expect(call[1]).toMatchObject({ email: "a@b.com", first_name: "Ada", org_role_id: 3, department_id: 5 });
+      expect(call[1]).toMatchObject({ email: "a@b.com", first_name: "Ada", role_id: 3, department_id: 5 });
     });
   });
 
@@ -84,11 +84,11 @@ describe("users tools", () => {
       (mockKula.patch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: { id: 7 } });
       await client.callTool({
         name: "update_user",
-        arguments: { id: "7", first_name: "Ada", org_role_id: 4 },
+        arguments: { id: "7", first_name: "Ada", role_id: 4 },
       });
       const call = (mockKula.patch as ReturnType<typeof vi.fn>).mock.calls.at(-1);
       expect(call[0]).toBe("/v1/users/7");
-      expect(call[1]).toEqual({ first_name: "Ada", org_role_id: 4 });
+      expect(call[1]).toEqual({ first_name: "Ada", role_id: 4 });
     });
   });
 
