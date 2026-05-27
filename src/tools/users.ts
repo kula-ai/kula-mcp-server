@@ -2,7 +2,6 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { KulaClient } from "../client.js";
 
-const VALID_STATUSES = ["active", "pending", "deactivated", "imported"] as const;
 const VALID_SORT_BY = ["created_at", "updated_at"] as const;
 const VALID_SORT_ORDER = ["asc", "desc"] as const;
 
