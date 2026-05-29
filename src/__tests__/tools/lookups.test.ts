@@ -212,10 +212,23 @@ describe("lookups tools", () => {
       });
 
       expect(mockKula.get).toHaveBeenCalledWith("/v1/degrees", {
+        query: undefined,
         page: "2",
         limit: "50",
       });
       expect(result.isError).toBeFalsy();
+    });
+
+    it("forwards the optional query filter", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: [] });
+
+      await client.callTool({ name: "find_degrees", arguments: { query: "bach" } });
+
+      expect(mockKula.get).toHaveBeenCalledWith("/v1/degrees", {
+        query: "bach",
+        page: undefined,
+        limit: undefined,
+      });
     });
 
     it("returns isError on client failure", async () => {

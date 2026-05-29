@@ -157,15 +157,16 @@ export function register(server: McpServer, client: KulaClient) {
     "find_degrees",
     {
       description:
-        "List academic degrees (paginated). Useful for discovering valid degree options for candidate education records.",
+        "List academic degrees, optionally filtered by name. Useful for discovering valid degree options for candidate education records.",
       inputSchema: {
+        query: z.string().optional().describe("Optional search term to filter degrees by name"),
         page: z.string().optional().describe("Page number (default: 1)"),
         limit: z.string().optional().describe("Items per page, max 100 (default: 20)"),
       },
     },
-    async ({ page, limit }) => {
+    async ({ query, page, limit }) => {
       try {
-        const data = await client.get("/v1/degrees", { page, limit });
+        const data = await client.get("/v1/degrees", { query, page, limit });
         return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
       } catch (error) {
         return {
