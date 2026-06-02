@@ -170,9 +170,13 @@ export function register(server: McpServer, client: KulaClient) {
       description:
         "Schedule an interview against an application. Calendar invites and conference URL are provisioned asynchronously — subscribe to the `interview.event.created` webhook to receive the fully-provisioned interview.\n" +
         "\n" +
-        "**Typical workflow:**\n" +
-        "1. Plan-driven: `get_interview_plan` → pick a `stage_activity_id` → `check_interviewers_availability` → `create_interview` with `stage_activity_id` (scorecard config inherits from the activity; pass `scorecard_template_id` only when stage_activity_id is NOT set).\n" +
-        "2. Ad-hoc: `list_valid_organizers` (organizer_id) → `list_applications` (application_id) → `check_interviewers_availability` → `create_interview`.\n" +
+        "**ASK THE USER BEFORE CALLING — gather and confirm every input; do not invent IDs, times, or settings:**\n" +
+        "1. **Plan-driven or ad-hoc?** ALWAYS ask first whether this interview should come from an interview-plan activity, or be an ad-hoc interview. If they're unsure, call `get_interview_plan` for the job and show the activities so they can choose. This decides which fields are required.\n" +
+        "2. **If plan-driven:** ask which activity → set `stage_activity_id`. The activity supplies `kind`, `location`, `duration_minutes`, `interviewer_ids`, `office_id`, `name`, note-taker, AI assist, calendar-invite templates, and scorecard config — all inherited. Only ask the user for these if they want to OVERRIDE a specific value. The interview is placed on the activity's stage. (`scorecard_template_id` is ignored here.)\n" +
+        "3. **If ad-hoc:** ask the user for the required fields — `kind`, `location`, the interview length (`duration_minutes` or `end_time`), `interviewer_ids`, and both calendar-invite templates `candidate_template_id` + `interviewer_template_id` (from `list_email_templates`; all required for ad-hoc). Then conditionally: location=onsite → ask `office_id`; location=zoom → ask `host_id` (must be one of the interviewers); location=hackerrank → ask `hackerrank_template_id`.\n" +
+        "4. **Always confirm:** `organizer_id`, `application_id`, `timezone`, and a `start_time` chosen by running `check_interviewers_availability` first (don't pick a time blindly).\n" +
+        "5. **Ask about optional setup** (mention plan-driven defaults from the activity unless overridden): AI note-taker (`ai_note_taker_enabled`), AI scorecard assist (`ai_scorecard_assist_enabled`), interview `name`, and `calendar_event_visibility`.\n" +
+        "6. Only call this tool once the user has confirmed the path and all needed values.\n" +
         "\n" +
         "**Where to discover IDs:**\n" +
         "- `application_id` → `list_applications`\n" +
@@ -186,28 +190,29 @@ export function register(server: McpServer, client: KulaClient) {
         "\n" +
         "**Constraints:**\n" +
         "- `start_time` must be on a 15-minute boundary with zero seconds (e.g. `09:00:00`, `09:15:00`) and in the future\n" +
-        "- `duration_minutes` must be a multiple of 15 (15..1440)\n" +
+        "- supply either `end_time` or `duration_minutes` (when both are sent, `end_time` wins); `duration_minutes` is any value 5..1440\n" +
         "- `kind: one_on_one` requires exactly one entry in `interviewer_ids`",
       inputSchema: {
         organizer_id: z.number().int().describe("ID of the user who organizes the interview. Use list_valid_organizers to discover."),
         application_id: z.number().int().describe("ID of the application (candidate's submission to a job — NOT a candidate id)."),
-        start_time: z.string().describe("ISO 8601 datetime, on 15-min boundary, in the future"),
-        duration_minutes: z.number().int().describe("Length in minutes — multiple of 15, between 15 and 1440"),
-        timezone: z.string().describe("IANA timezone name (e.g., America/Los_Angeles)"),
-        kind: z.enum(VALID_KINDS).describe(`Type of interview: ${VALID_KINDS.join(" | ")}`),
-        location: z.enum(VALID_LOCATIONS).describe(`Location: ${VALID_LOCATIONS.join(" | ")}`),
-        interviewer_ids: z.array(z.number().int()).min(1).max(10).describe("IDs of users participating in the interview"),
-        stage_activity_id: z.number().int().optional().describe("Interview-plan activity ID (from get_interview_plan). When set, scorecard config inherits from the activity."),
-        office_id: z.number().int().optional().describe("Required when location=onsite"),
+        start_time: z.string().describe("ISO 8601 datetime, on 15-min boundary, in the future. Always required."),
+        timezone: z.string().describe("IANA timezone name (e.g., America/Los_Angeles). Always required."),
+        end_time: z.string().optional().describe("ISO 8601 datetime for when the interview ends. Provide this or duration_minutes; when both are sent, end_time wins. Resulting duration must be 5..1440 minutes."),
+        duration_minutes: z.number().int().optional().describe("Length in minutes — any value between 5 and 1440. Provide this or end_time (end_time wins if both). Required unless end_time or stage_activity_id is set (then inherited from the activity)."),
+        kind: z.enum(VALID_KINDS).optional().describe(`Type of interview: ${VALID_KINDS.join(" | ")}. Required unless stage_activity_id is set (then inherited from the activity).`),
+        location: z.enum(VALID_LOCATIONS).optional().describe(`Location: ${VALID_LOCATIONS.join(" | ")}. Required unless stage_activity_id is set (then inherited from the activity).`),
+        interviewer_ids: z.array(z.number().int()).min(1).max(10).optional().describe("IDs of users participating in the interview. Required unless stage_activity_id is set (then inherited from the activity). If the chosen activity has no interviewers configured, you must still supply this."),
+        stage_activity_id: z.number().int().optional().describe("Interview-plan activity ID (from get_interview_plan). When set, the interview is placed on the activity's stage and inherits kind, location, duration_minutes, interviewer_ids, office_id, name, note-taker, AI assist, calendar-invite templates, and scorecard config for any omitted field (supply any to override). scorecard_template_id is ignored."),
+        office_id: z.number().int().optional().describe("Required when location=onsite (unless stage_activity_id supplies it)."),
         host_id: z.number().int().optional().describe("Required when location=zoom; must be in interviewer_ids"),
-        hackerrank_template_id: z.number().int().optional().describe("Required when location=hackerrank"),
-        name: z.string().max(255).optional().describe("Display name for the interview"),
+        hackerrank_template_id: z.number().int().optional().describe("Required when location=hackerrank. Inherited from the activity when omitted and stage_activity_id is set."),
+        name: z.string().max(255).optional().describe("Display name for the interview. Inherited from the activity when omitted and stage_activity_id is set."),
         calendar_event_visibility: z.enum(VALID_VISIBILITIES).optional().describe("Calendar invite visibility"),
-        ai_note_taker_enabled: z.boolean().optional(),
-        ai_scorecard_assist_enabled: z.boolean().optional(),
-        interviewer_template_id: z.number().int().optional().describe("Email template ID for interviewer invite body"),
-        candidate_template_id: z.number().int().optional().describe("Email template ID for candidate invite body"),
-        scorecard_template_id: z.number().int().optional().describe("Scorecard template ID. Silently ignored when stage_activity_id is set."),
+        ai_note_taker_enabled: z.boolean().optional().describe("Enable the AI note-taker. Inherited from the activity when omitted and stage_activity_id is set."),
+        ai_scorecard_assist_enabled: z.boolean().optional().describe("Allow AI assistance when filling scorecards. Inherited from the activity when omitted and stage_activity_id is set."),
+        interviewer_template_id: z.number().int().optional().describe("Email template ID for interviewer invite body. Required when stage_activity_id is not set; inherited from the activity when omitted and stage_activity_id is set."),
+        candidate_template_id: z.number().int().optional().describe("Email template ID for candidate invite body. Required when stage_activity_id is not set; inherited from the activity when omitted and stage_activity_id is set."),
+        scorecard_template_id: z.number().int().optional().describe("Scorecard template ID. Silently ignored when stage_activity_id is set (scorecard config inherits from the activity)."),
       },
     },
     async ({ application_id, ...body }) => {
@@ -224,12 +229,14 @@ export function register(server: McpServer, client: KulaClient) {
     {
       description:
         "Update an existing interview. All fields are optional — only the supplied fields are modified. " +
-        "Immutable fields (cannot be changed after creation): `organizer_id`, `application_id`, `job_id`, `stage_id`, `candidate_id`, `stage_activity_id`, `scorecard_template_id`. " +
+        "To change the length, supply `end_time` or `duration_minutes` — `end_time` wins when both are sent. " +
+        "Immutable fields (cannot be changed after creation): `organizer_id`, `application_id`, `job_id`, `candidate_id`, `stage_activity_id`, `scorecard_template_id`. " +
         "Cancelled interviews cannot be updated (returns 422 err_interview_cancelled).",
       inputSchema: {
         id: z.string().describe("Interview ID"),
         start_time: z.string().optional().describe("New start_time (ISO 8601, on 15-min boundary, zero seconds)"),
-        duration_minutes: z.number().int().optional().describe("Multiple of 15, 15..1440"),
+        end_time: z.string().optional().describe("New interview end (ISO 8601). Provide this or duration_minutes; when both are sent, end_time wins. Resulting duration must be 5..1440 minutes."),
+        duration_minutes: z.number().int().optional().describe("Length in minutes — any value 5..1440. Ignored if end_time is also supplied."),
         timezone: z.string().optional().describe("IANA timezone (e.g., America/Los_Angeles)"),
         kind: z.enum(VALID_KINDS).optional().describe(`Interview type: ${VALID_KINDS.join(" | ")}`),
         location: z.enum(VALID_LOCATIONS).optional().describe(`Location: ${VALID_LOCATIONS.join(" | ")}`),
@@ -314,7 +321,7 @@ export function register(server: McpServer, client: KulaClient) {
         interviewer_ids: z.array(z.number().int()).min(1).max(10).describe("User IDs to check availability for. Up to 10 interviewers per request."),
         start_time: z.string().describe("Search window start (ISO 8601)"),
         end_time: z.string().optional().describe("Search window end (ISO 8601). Defaults to start_time + 7 days. Max 30 days."),
-        duration_minutes: z.number().int().describe("Slot length, 15..480"),
+        duration_minutes: z.number().int().describe("Slot length in minutes, 5..1440"),
         interview_kind: z.enum(VALID_KINDS).describe("`panel` = slots when ALL interviewers are simultaneously free (intersection). `one_on_one` = each interviewer's free slots are emitted independently and tagged with that user's ID."),
         timezone: z.string().describe("IANA timezone (e.g., America/Los_Angeles)"),
       },
