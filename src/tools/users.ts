@@ -87,11 +87,11 @@ export function register(server: McpServer, client: KulaClient) {
     "create_user",
     {
       description:
-        "Invite a new user to the account. The user is created in the pending state and sent an invitation email. Requires email, first_name, and role_id.",
+        "Invite a new user to the account. The user is created in the pending state and sent an invitation email. Requires email and first_name.",
       inputSchema: {
         email: z.string().describe("Email address of the user"),
         first_name: z.string().describe("First name of the user"),
-        role_id: z.number().describe("ID of the role to assign to the user. Use list_roles to discover valid IDs."),
+        role_id: z.number().optional().describe("ID of the role to assign to the user. Defaults to the Organization Member role if not specified. Use list_roles to discover valid IDs."),
         last_name: z.string().optional().describe("Last name of the user"),
         job_title: z.string().optional().describe("Job title of the user"),
         time_zone: z.string().optional().describe("IANA timezone identifier (e.g. America/Los_Angeles)"),

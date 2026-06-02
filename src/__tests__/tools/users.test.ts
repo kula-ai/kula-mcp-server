@@ -77,6 +77,16 @@ describe("users tools", () => {
       expect(call[0]).toBe("/v1/users");
       expect(call[1]).toMatchObject({ email: "a@b.com", first_name: "Ada", role_id: 3, department_id: 5 });
     });
+
+    it("omits role_id when not provided", async () => {
+      (mockKula.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: { id: 2 } });
+      await client.callTool({
+        name: "create_user",
+        arguments: { email: "c@d.com", first_name: "Grace" },
+      });
+      const call = (mockKula.post as ReturnType<typeof vi.fn>).mock.calls.at(-1);
+      expect(call[1]).not.toHaveProperty("role_id");
+    });
   });
 
   describe("update_user", () => {
