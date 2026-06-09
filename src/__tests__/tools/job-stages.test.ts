@@ -124,4 +124,35 @@ describe("job-stages tools", () => {
       expect(result.isError).toBe(true);
     });
   });
+
+  describe("list_job_stage_activities", () => {
+    it("calls the job-level endpoint with only job_id", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        data: [{ id: 30, kind: "send_email", stage_id: 10 }],
+      });
+
+      const result = await client.callTool({
+        name: "list_job_stage_activities",
+        arguments: { job_id: "42" },
+      });
+
+      const call = (mockKula.get as ReturnType<typeof vi.fn>).mock.calls.at(-1);
+      expect(call[0]).toBe("/v1/jobs/42/stage-activities");
+      expect(result.isError).toBeFalsy();
+      const text = (result.content as Array<{ type: string; text: string }>)[0].text;
+      expect(JSON.parse(text).data[0].stage_id).toBe(10);
+    });
+
+    it("returns isError true on failure", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("fail"));
+      const result = await client.callTool({ name: "list_job_stage_activities", arguments: { job_id: "1" } });
+      expect(result.isError).toBe(true);
+    });
+
+    it("handles non-Error throws", async () => {
+      (mockKula.get as ReturnType<typeof vi.fn>).mockRejectedValueOnce("fail");
+      const result = await client.callTool({ name: "list_job_stage_activities", arguments: { job_id: "1" } });
+      expect(result.isError).toBe(true);
+    });
+  });
 });

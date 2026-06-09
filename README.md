@@ -128,13 +128,14 @@ Get your API key from [Kula Developer Settings](https://developers.kula.ai).
 </details>
 
 <details>
-<summary>Job Stages (3 tools)</summary>
+<summary>Job Stages (4 tools)</summary>
 
 | Tool | Description |
 |------|-------------|
 | `list_job_stages` | List all pipeline stages for a specific job |
 | `create_job_stage` | Create a new pipeline stage for a job |
 | `list_stage_activities` | List all activities configured for a specific job stage |
+| `list_job_stage_activities` | List all activities configured for all stages of a job |
 
 </details>
 
