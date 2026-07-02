@@ -4,6 +4,7 @@ import cors from "cors";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { KulaClient } from "./client.js";
 import { buildServer } from "./server.js";
+import { checkRateLimit } from "./ratelimit.js";
 
 // Whole-request deadline. Bounded well under the MCP client's 60s default request
 // timeout and the container's SIGKILL grace, so a request never outlives a deploy.
@@ -45,8 +46,11 @@ function originHostGuard(req: Request, res: Response, next: NextFunction): void 
   next();
 }
 
-// ponytail: shallow liveness only — a core-reachability + staleness guard comes with
-// the ECS health-check work. A process that answers is healthy enough for now.
+// Deliberately shallow liveness: a response served on the event loop proves the
+// process is up and not blocked. We do NOT probe core here on purpose — a deep
+// "can I reach core?" check makes a brief core blip fail every task at once and
+// take the whole fleet out of rotation (cascading outage). Core reachability is
+// surfaced per-request (the /v1/me validation returns 502 when core is down).
 function healthOk(): boolean {
   return true;
 }
@@ -122,6 +126,18 @@ export function startHttpServer(): Server {
       }
       if (!meRes.ok) {
         res.status(502).json({ error: "upstream_error" });
+        return;
+      }
+
+      // Rate-limit per (account, user), read from the /me identity we just fetched.
+      let me: { id?: number | string; account?: { id?: number | string } } = {};
+      try {
+        me = (await meRes.json()) as typeof me;
+      } catch {
+        // identity is only used for the rate-limit key; fall back to a shared bucket
+      }
+      if (!(await checkRateLimit(me.account?.id ?? "unknown", me.id ?? "unknown"))) {
+        res.status(429).set("Retry-After", "30").json({ error: "rate_limited" });
         return;
       }
 
