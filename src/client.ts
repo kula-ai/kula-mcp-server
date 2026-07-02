@@ -3,10 +3,16 @@ type ParamValue = string | number | boolean | string[] | number[] | undefined;
 export class KulaClient {
   private apiKey: string;
   private baseUrl: string;
+  private signal?: AbortSignal;
 
-  constructor(apiKey: string, baseUrl: string = "https://api.kula.ai") {
+  constructor(
+    apiKey: string,
+    baseUrl: string = "https://api.kula.ai",
+    signal?: AbortSignal
+  ) {
     this.apiKey = apiKey;
     this.baseUrl = baseUrl;
+    this.signal = signal;
   }
 
   private headers(): Record<string, string> {
@@ -40,6 +46,7 @@ export class KulaClient {
       method,
       headers: this.headers(),
       body: body ? JSON.stringify(body) : undefined,
+      signal: this.signal,
     });
 
     if (!response.ok) {
@@ -87,6 +94,7 @@ export class KulaClient {
         Authorization: `Bearer ${this.apiKey}`,
       },
       body: formData,
+      signal: this.signal,
     });
 
     if (!response.ok) {
