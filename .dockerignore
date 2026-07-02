@@ -1,0 +1,8 @@
+node_modules
+build
+coverage
+.git
+.github
+.worktrees
+.DS_Store
+**/*.test.ts
