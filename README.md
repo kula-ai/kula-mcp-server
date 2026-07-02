@@ -67,11 +67,31 @@ npx @kula-ai/mcp-server
 
 ## Configuration
 
+The server runs in two modes.
+
+### Local (stdio) — default
+
 | Environment Variable | Required | Description |
 |---------------------|----------|-------------|
 | `KULA_API_KEY` | Yes | Your Kula API key |
 
 Get your API key from [Kula Developer Settings](https://developers.kula.ai).
+
+### Remote (HTTP) — `--http`
+
+The stateless remote connector. Started with `node build/index.js --http` (the
+Docker image does this). Each request carries its own bearer token, so there is
+no server-wide `KULA_API_KEY`.
+
+| Environment Variable | Required | Description |
+|---------------------|----------|-------------|
+| `MCP_ALLOWED_HOSTS` | Yes | Comma-separated allowed `Host` values (include the port, e.g. `mcp.kula.ai,mcp.kula.ai:443`). Fail-closed if empty. |
+| `MCP_ALLOWED_ORIGINS` | Yes | Comma-separated allowed browser `Origin` values. Absent `Origin` is allowed (non-browser clients); a mismatched one is rejected. Fail-closed if empty. |
+| `KULA_API_URL` | No | Base URL of the Kula API (defaults to `https://api.kula.ai`). |
+| `PORT` | No | Listen port (defaults to `8080`). |
+
+Endpoints: `POST /mcp` (MCP Streamable HTTP; requires `Authorization: Bearer <token>`),
+`GET /healthz` (liveness). Every request is bounded by a 50s deadline.
 
 ## Available Tools
 

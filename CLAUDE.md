@@ -21,7 +21,9 @@ MCP server wrapping the Kula recruiting API (https://api.kula.ai/v1).
 ## Architecture
 
 ```
-src/index.ts        → Entry point. Creates McpServer, registers tools, starts StdioServerTransport.
+src/index.ts        → Entry point. `--http` → remote connector; default → local stdio.
+src/server.ts       → buildServer(client): fresh McpServer with all tools. Built per request over HTTP.
+src/http.ts         → Stateless Streamable HTTP connector (Origin/Host guard, 50s deadline, per-request client).
 src/client.ts       → KulaClient class. Thin fetch() wrapper with auth headers and error handling.
 src/tools/*.ts      → Each file exports register(server, client). One file per API domain.
 src/types.ts        → Shared Zod schemas reused across tool modules.
