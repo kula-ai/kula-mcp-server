@@ -1,0 +1,47 @@
+name: Build and push image
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig.json"
+      - "Dockerfile"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  # ECR home region (engineering registry); replication copies to us-east-2 where ECS pulls.
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: kula-mcp-server
+
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+        run: |
+          docker build \
+            -t "$REGISTRY/$ECR_REPOSITORY:${{ github.sha }}" \
+            -t "$REGISTRY/$ECR_REPOSITORY:mcp_latest" .
+          docker push "$REGISTRY/$ECR_REPOSITORY:${{ github.sha }}"
+          docker push "$REGISTRY/$ECR_REPOSITORY:mcp_latest"
