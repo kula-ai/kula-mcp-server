@@ -89,4 +89,65 @@ describe("HTTP connector guards", () => {
   it("returns 405 for GET /mcp", async () => {
     expect((await request("GET", "/mcp")).status).toBe(405);
   });
+
+  it("returns 401 when core rejects the token (/v1/me 401)", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(null, { status: 401 }))
+    );
+    const res = await request(
+      "POST",
+      "/mcp",
+      { Host: HOST, "Content-Type": "application/json", Authorization: "Bearer bad" },
+      "{}"
+    );
+    expect(res.status).toBe(401);
+    vi.unstubAllGlobals();
+  });
+
+  it("returns 502 when core is unreachable during validation", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        throw new Error("ECONNREFUSED");
+      })
+    );
+    const res = await request(
+      "POST",
+      "/mcp",
+      { Host: HOST, "Content-Type": "application/json", Authorization: "Bearer any" },
+      "{}"
+    );
+    expect(res.status).toBe(502);
+    vi.unstubAllGlobals();
+  });
+
+  it("passes the guard when core accepts the token (/v1/me 200)", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string | URL) => {
+        if (String(url).endsWith("/v1/me")) {
+          return new Response(JSON.stringify({ id: 1 }), {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          });
+        }
+        return new Response("{}", { status: 200 });
+      })
+    );
+    const res = await request(
+      "POST",
+      "/mcp",
+      {
+        Host: HOST,
+        "Content-Type": "application/json",
+        Accept: "application/json, text/event-stream",
+        Authorization: "Bearer good",
+      },
+      JSON.stringify({ jsonrpc: "2.0", method: "tools/list", id: 1 })
+    );
+    expect(res.status).not.toBe(401);
+    expect(res.status).not.toBe(502);
+    vi.unstubAllGlobals();
+  });
 });

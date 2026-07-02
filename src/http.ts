@@ -9,6 +9,10 @@ import { buildServer } from "./server.js";
 // timeout and the container's SIGKILL grace, so a request never outlives a deploy.
 const REQUEST_DEADLINE_MS = 50_000;
 
+const DEFAULT_API_BASE = "https://api.kula.ai";
+const WWW_AUTHENTICATE =
+  'Bearer resource_metadata="https://mcp.kula.ai/.well-known/oauth-protected-resource/mcp"';
+
 const ALLOWED_HOSTS = (process.env.MCP_ALLOWED_HOSTS ?? "")
   .split(",")
   .map((h) => h.trim())
@@ -53,7 +57,7 @@ export function startHttpServer(): Server {
       "MCP_ALLOWED_HOSTS and MCP_ALLOWED_ORIGINS must be set (fail-closed)"
     );
   }
-  const apiUrl = process.env.KULA_API_URL;
+  const apiBase = process.env.KULA_API_URL ?? DEFAULT_API_BASE;
   const port = Number(process.env.PORT ?? 8080);
 
   const app = express();
@@ -90,17 +94,40 @@ export function startHttpServer(): Server {
       if (!token) {
         res
           .status(401)
-          .set(
-            "WWW-Authenticate",
-            'Bearer resource_metadata="https://mcp.kula.ai/.well-known/oauth-protected-resource/mcp"'
-          )
+          .set("WWW-Authenticate", WWW_AUTHENTICATE)
           .json({ error: "unauthorized" });
         return;
       }
 
+      // Validate the token before exposing any tools. /v1/me is the lightweight
+      // identity probe — core checks signature, revocation and scope. Without this,
+      // tools/list (which makes no core call) would succeed for an invalid token.
+      let meRes: globalThis.Response;
+      try {
+        meRes = await fetch(new URL("/v1/me", apiBase), {
+          headers: { Authorization: `Bearer ${token}` },
+          signal: deadline,
+        });
+      } catch (err) {
+        console.error("mcp_validate_error", redact(err));
+        res.status(502).json({ error: "upstream_unavailable" });
+        return;
+      }
+      if (meRes.status === 401 || meRes.status === 403) {
+        res
+          .status(401)
+          .set("WWW-Authenticate", WWW_AUTHENTICATE)
+          .json({ error: "unauthorized" });
+        return;
+      }
+      if (!meRes.ok) {
+        res.status(502).json({ error: "upstream_error" });
+        return;
+      }
+
       // Phase 1: the caller's own mcp-scoped Kula token is used directly against
-      // core. core validates it (signature, revocation, mcp scope) and 401s if bad.
-      const client = new KulaClient(token, apiUrl, deadline);
+      // core for every tool call. core re-validates it and 401s if it goes bad.
+      const client = new KulaClient(token, apiBase, deadline);
       const server = buildServer(client);
       transport = new StreamableHTTPServerTransport({
         sessionIdGenerator: undefined,
