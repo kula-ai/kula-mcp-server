@@ -5,6 +5,7 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import { KulaClient } from "./client.js";
 import { buildServer } from "./server.js";
 import { checkRateLimit } from "./ratelimit.js";
+import { RejectedTokenCache } from "./negcache.js";
 
 // Whole-request deadline. Bounded well under the MCP client's 60s default request
 // timeout and the container's SIGKILL grace, so a request never outlives a deploy.
@@ -32,11 +33,15 @@ const ALLOWED_ORIGINS = (process.env.MCP_ALLOWED_ORIGINS ?? "")
   .map((o) => o.trim())
   .filter(Boolean);
 
-function redact(err: unknown): string {
+export function redact(err: unknown): string {
   const msg = err instanceof Error ? err.message : String(err);
-  // Strip anything after "Bearer " so tokens never reach logs.
-  return msg.replace(/Bearer\s+[\w.-]+/gi, "Bearer [redacted]");
+  // Strip bearer values (base64url + padding) and any bare JWT so tokens never log.
+  return msg
+    .replace(/Bearer\s+[A-Za-z0-9._~+/-]+=*/gi, "Bearer [redacted]")
+    .replace(/eyJ[A-Za-z0-9._-]{10,}/g, "[redacted-jwt]");
 }
+
+const rejectedTokens = new RejectedTokenCache();
 
 // Reject a mismatched Host always. Reject Origin only when PRESENT and not allowed:
 // non-browser MCP clients (Claude Code, Cursor) send no Origin, and DNS-rebinding is
@@ -53,15 +58,6 @@ function originHostGuard(req: Request, res: Response, next: NextFunction): void 
     return;
   }
   next();
-}
-
-// Deliberately shallow liveness: a response served on the event loop proves the
-// process is up and not blocked. We do NOT probe core here on purpose — a deep
-// "can I reach core?" check makes a brief core blip fail every task at once and
-// take the whole fleet out of rotation (cascading outage). Core reachability is
-// surfaced per-request (the /v1/me validation returns 502 when core is down).
-function healthOk(): boolean {
-  return true;
 }
 
 export function startHttpServer(): Server {
@@ -82,10 +78,11 @@ export function startHttpServer(): Server {
     })
   );
 
-  app.get("/healthz", (_req, res) => {
-    const ok = healthOk();
-    res.status(ok ? 200 : 503).json({ status: ok ? "ok" : "stale" });
-  });
+  // Deliberately shallow liveness: a response served on the event loop proves the
+  // process is up and not blocked. We do NOT probe core here — a deep "can I reach
+  // core?" check makes a brief core blip fail every task at once (cascading outage).
+  // Core reachability is surfaced per-request (the /v1/me validation returns 502).
+  app.get("/healthz", (_req, res) => res.status(200).json({ status: "ok" }));
 
   app.post("/mcp", express.json(), originHostGuard, async (req, res) => {
     if (inFlight >= MAX_IN_FLIGHT) {
@@ -105,13 +102,24 @@ export function startHttpServer(): Server {
       if (closed) return;
       closed = true;
       inFlight -= 1;
-      void transport?.close();
+      Promise.resolve(transport?.close()).catch(() => {
+        // best-effort cleanup; a close error must not crash the process
+      });
     };
     res.on("close", teardown);
 
     try {
       const token = req.headers.authorization?.replace(/^Bearer\s+/i, "");
       if (!token) {
+        res
+          .status(401)
+          .set("WWW-Authenticate", WWW_AUTHENTICATE)
+          .json({ error: "unauthorized" });
+        return;
+      }
+
+      // Fast-reject a token core rejected recently, without re-hitting /v1/me.
+      if (rejectedTokens.isRejected(token, Date.now())) {
         res
           .status(401)
           .set("WWW-Authenticate", WWW_AUTHENTICATE)
@@ -134,6 +142,7 @@ export function startHttpServer(): Server {
         return;
       }
       if (meRes.status === 401 || meRes.status === 403) {
+        rejectedTokens.mark(token, Date.now());
         res
           .status(401)
           .set("WWW-Authenticate", WWW_AUTHENTICATE)
@@ -195,7 +204,6 @@ export function startHttpServer(): Server {
   // cover; the Node default (300s) would otherwise outlive the container stop grace.
   httpServer.requestTimeout = REQUEST_DEADLINE_MS;
   httpServer.headersTimeout = REQUEST_DEADLINE_MS;
-  installGracefulShutdown(httpServer);
   return httpServer;
 }
 
@@ -203,22 +211,21 @@ export function startHttpServer(): Server {
 // SIGTERM immediately, cutting in-flight requests on every deploy. Here we stop
 // accepting new connections, drop idle keep-alives, let active requests finish,
 // then exit — with a hard cap under the 120s grace as a backstop.
-function installGracefulShutdown(httpServer: Server): void {
-  let shuttingDown = false;
-  const shutdown = (signal: string): void => {
-    if (shuttingDown) return;
-    shuttingDown = true;
-    console.error(`received ${signal}, draining in-flight requests`);
-    httpServer.close(() => {
-      console.error("drain complete, exiting");
-      process.exit(0);
-    });
-    httpServer.closeIdleConnections();
-    setTimeout(() => {
-      console.error("drain timeout, forcing exit");
-      process.exit(0);
-    }, DRAIN_TIMEOUT_MS).unref();
-  };
-  process.once("SIGTERM", () => shutdown("SIGTERM"));
-  process.once("SIGINT", () => shutdown("SIGINT"));
+// Exported for testing: stop accepting, drop idle keep-alives, let active requests
+// finish, then exit — with a hard cap under the 120s SIGKILL grace as a backstop.
+export function drainAndExit(
+  httpServer: Server,
+  signal: string,
+  exit: (code: number) => void
+): void {
+  console.error(`received ${signal}, draining in-flight requests`);
+  httpServer.close(() => {
+    console.error("drain complete, exiting");
+    exit(0);
+  });
+  httpServer.closeIdleConnections();
+  setTimeout(() => {
+    console.error("drain timeout, forcing exit");
+    exit(0);
+  }, DRAIN_TIMEOUT_MS).unref();
 }

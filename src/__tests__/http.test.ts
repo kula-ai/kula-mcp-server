@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import http from "node:http";
+import net from "node:net";
 import type { Server } from "node:http";
 
 const PORT = 8199;
@@ -61,6 +62,25 @@ describe("HTTP connector guards", () => {
     expect(res.status).toBe(401);
   });
 
+  it("rejects a request with no Host header (403)", async () => {
+    const status = await new Promise<number>((resolve, reject) => {
+      const sock = net.connect(PORT, "localhost", () => {
+        // HTTP/1.0 lets us omit Host entirely (undefined host header).
+        sock.write(
+          "POST /mcp HTTP/1.0\r\nContent-Type: application/json\r\nContent-Length: 2\r\n\r\n{}"
+        );
+      });
+      let data = "";
+      sock.on("data", (d) => (data += d.toString()));
+      sock.on("end", () => {
+        const m = data.match(/HTTP\/1\.[01] (\d+)/);
+        resolve(m ? Number(m[1]) : 0);
+      });
+      sock.on("error", reject);
+    });
+    expect(status).toBe(403);
+  });
+
   it("rejects a mismatched Host (403)", async () => {
     const res = await request(
       "POST",
@@ -88,6 +108,10 @@ describe("HTTP connector guards", () => {
 
   it("returns 405 for GET /mcp", async () => {
     expect((await request("GET", "/mcp")).status).toBe(405);
+  });
+
+  it("returns 405 for DELETE /mcp", async () => {
+    expect((await request("DELETE", "/mcp")).status).toBe(405);
   });
 
   it("returns 401 when core rejects the token (/v1/me 401)", async () => {
@@ -149,5 +173,102 @@ describe("HTTP connector guards", () => {
     expect(res.status).not.toBe(401);
     expect(res.status).not.toBe(502);
     vi.unstubAllGlobals();
+  });
+
+  it("returns 502 when core answers with a server error during validation", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(null, { status: 500 })));
+    const res = await request(
+      "POST",
+      "/mcp",
+      { Host: HOST, "Content-Type": "application/json", Authorization: "Bearer srv-err" },
+      "{}"
+    );
+    expect(res.status).toBe(502);
+    vi.unstubAllGlobals();
+  });
+
+  it("falls back to a shared rate-limit key when /v1/me omits identity", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string | URL) =>
+        String(url).endsWith("/v1/me")
+          ? new Response("{}", { status: 200, headers: { "content-type": "application/json" } })
+          : new Response("{}", { status: 200 })
+      )
+    );
+    const res = await request(
+      "POST",
+      "/mcp",
+      {
+        Host: HOST,
+        "Content-Type": "application/json",
+        Accept: "application/json, text/event-stream",
+        Authorization: "Bearer no-identity",
+      },
+      JSON.stringify({ jsonrpc: "2.0", method: "tools/list", id: 1 })
+    );
+    expect(res.status).not.toBe(401);
+    expect(res.status).not.toBe(502);
+    vi.unstubAllGlobals();
+  });
+
+  it("negative-caches a rejected token so the second request skips /v1/me", async () => {
+    const f = vi.fn(async () => new Response(null, { status: 401 }));
+    vi.stubGlobal("fetch", f);
+    const opts = {
+      Host: HOST,
+      "Content-Type": "application/json",
+      Authorization: "Bearer repeat-bad",
+    };
+    expect((await request("POST", "/mcp", opts, "{}")).status).toBe(401);
+    expect((await request("POST", "/mcp", opts, "{}")).status).toBe(401);
+    expect(f).toHaveBeenCalledTimes(1); // second served from the negative cache
+    vi.unstubAllGlobals();
+  });
+});
+
+describe("redact", () => {
+  it("scrubs bearer values and bare JWTs, passes plain text", async () => {
+    const { redact } = await import("../http.js");
+    expect(redact(new Error("Authorization: Bearer abc.def/ghi+jkl="))).not.toContain(
+      "abc.def"
+    );
+    expect(
+      redact(new Error("token eyJhbGciOiJFZERTQSJ9.payloadpart123.signature"))
+    ).toContain("[redacted-jwt]");
+    expect(redact("a plain non-error string")).toBe("a plain non-error string");
+  });
+});
+
+describe("drainAndExit", () => {
+  it("closes the server, drops idle connections, and exits 0", async () => {
+    const { drainAndExit } = await import("../http.js");
+    const exit = vi.fn();
+    const closeIdleConnections = vi.fn();
+    const fakeServer = {
+      close: (cb: () => void) => cb(),
+      closeIdleConnections,
+    } as unknown as import("node:http").Server;
+
+    drainAndExit(fakeServer, "SIGTERM", exit);
+
+    expect(closeIdleConnections).toHaveBeenCalledTimes(1);
+    expect(exit).toHaveBeenCalledWith(0);
+  });
+
+  it("force-exits when draining exceeds the timeout", async () => {
+    vi.useFakeTimers();
+    const { drainAndExit } = await import("../http.js");
+    const exit = vi.fn();
+    const fakeServer = {
+      close: () => {}, // never invokes the callback → drain hangs
+      closeIdleConnections: () => {},
+    } as unknown as import("node:http").Server;
+
+    drainAndExit(fakeServer, "SIGTERM", exit);
+    vi.advanceTimersByTime(115_000);
+
+    expect(exit).toHaveBeenCalledWith(0);
+    vi.useRealTimers();
   });
 });
