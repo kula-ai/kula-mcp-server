@@ -10,6 +10,15 @@ import { checkRateLimit } from "./ratelimit.js";
 // timeout and the container's SIGKILL grace, so a request never outlives a deploy.
 const REQUEST_DEADLINE_MS = 50_000;
 
+// Max concurrent /mcp requests per task before shedding with 503 — a backstop for
+// the core connection pool; rate-limiting + autoscaling handle the normal case.
+const MAX_IN_FLIGHT = Number(process.env.MCP_MAX_IN_FLIGHT ?? 100);
+
+// Force exit before the 120s Fargate SIGKILL, so a drain always completes cleanly.
+const DRAIN_TIMEOUT_MS = 115_000;
+
+let inFlight = 0;
+
 const DEFAULT_API_BASE = "https://api.kula.ai";
 const WWW_AUTHENTICATE =
   'Bearer resource_metadata="https://mcp.kula.ai/.well-known/oauth-protected-resource/mcp"';
@@ -79,6 +88,12 @@ export function startHttpServer(): Server {
   });
 
   app.post("/mcp", express.json(), originHostGuard, async (req, res) => {
+    if (inFlight >= MAX_IN_FLIGHT) {
+      res.status(503).set("Retry-After", "5").json({ error: "overloaded" });
+      return;
+    }
+    inFlight += 1;
+
     const deadline = AbortSignal.timeout(REQUEST_DEADLINE_MS);
     // Outer socket timeout: handleRequest/serialization receive no signal, so a
     // post-core hang needs the socket destroyed independently of the AbortSignal.
@@ -89,6 +104,7 @@ export function startHttpServer(): Server {
     const teardown = (): void => {
       if (closed) return;
       closed = true;
+      inFlight -= 1;
       void transport?.close();
     };
     res.on("close", teardown);
@@ -178,5 +194,30 @@ export function startHttpServer(): Server {
   // cover; the Node default (300s) would otherwise outlive the container stop grace.
   httpServer.requestTimeout = REQUEST_DEADLINE_MS;
   httpServer.headersTimeout = REQUEST_DEADLINE_MS;
+  installGracefulShutdown(httpServer);
   return httpServer;
+}
+
+// Fargate sends SIGTERM then SIGKILLs at 120s. Without a handler Node exits on
+// SIGTERM immediately, cutting in-flight requests on every deploy. Here we stop
+// accepting new connections, drop idle keep-alives, let active requests finish,
+// then exit — with a hard cap under the 120s grace as a backstop.
+function installGracefulShutdown(httpServer: Server): void {
+  let shuttingDown = false;
+  const shutdown = (signal: string): void => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    console.error(`received ${signal}, draining in-flight requests`);
+    httpServer.close(() => {
+      console.error("drain complete, exiting");
+      process.exit(0);
+    });
+    httpServer.closeIdleConnections();
+    setTimeout(() => {
+      console.error("drain timeout, forcing exit");
+      process.exit(0);
+    }, DRAIN_TIMEOUT_MS).unref();
+  };
+  process.once("SIGTERM", () => shutdown("SIGTERM"));
+  process.once("SIGINT", () => shutdown("SIGINT"));
 }
