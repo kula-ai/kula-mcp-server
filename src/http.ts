@@ -160,7 +160,8 @@ export function startHttpServer(): Server {
       // Phase 1: the caller's own mcp-scoped Kula token is used directly against
       // core for every tool call. core re-validates it and 401s if it goes bad.
       const client = new KulaClient(token, apiBase, deadline);
-      const server = buildServer(client);
+      // Remote connector is read-only until core-side enforcement (PAT) lands.
+      const server = buildServer(client, { readOnly: true });
       transport = new StreamableHTTPServerTransport({
         sessionIdGenerator: undefined,
         enableJsonResponse: true,

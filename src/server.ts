@@ -16,30 +16,58 @@ import { register as registerUsers } from "./tools/users.js";
 import { register as registerRoles } from "./tools/roles.js";
 import { register as registerLookups } from "./tools/lookups.js";
 
-// Builds a fresh McpServer with all tools registered against the given client.
-// A new server + client is created per request in the HTTP transport (stateless,
+// Read tools name themselves list_/get_/find_/search_; everything else mutates.
+const READ_ONLY_PREFIX = /^(list|get|find|search)_/;
+
+// When read-only, wrap the server so registerTool silently drops write tools.
+// register() modules never read registerTool's return value, so skipping is safe.
+function readOnlyGuard(server: McpServer): McpServer {
+  return new Proxy(server, {
+    get(target, prop, receiver) {
+      if (prop === "registerTool") {
+        return (name: string, ...rest: unknown[]): unknown => {
+          if (READ_ONLY_PREFIX.test(name)) {
+            return (target.registerTool as (...a: unknown[]) => unknown)(name, ...rest);
+          }
+          return undefined;
+        };
+      }
+      const value = Reflect.get(target, prop, receiver);
+      return typeof value === "function" ? (value as () => unknown).bind(target) : value;
+    },
+  }) as McpServer;
+}
+
+// Builds a fresh McpServer with tools registered against the given client. A new
+// server + client is created per request in the HTTP transport (stateless,
 // multi-tenant); the stdio entry point builds one for the process lifetime.
-export function buildServer(client: KulaClient): McpServer {
+// readOnly restricts registration to read tools (the remote pilot's safety boundary
+// until core-side read-only enforcement lands).
+export function buildServer(
+  client: KulaClient,
+  opts: { readOnly?: boolean } = {}
+): McpServer {
   const server = new McpServer({
     name: "kula",
     version: "0.1.0",
   });
+  const target = opts.readOnly ? readOnlyGuard(server) : server;
 
-  registerJobPosts(server, client);
-  registerJobs(server, client);
-  registerApplications(server, client);
-  registerCandidates(server, client);
-  registerWebhooks(server, client);
-  registerAutocomplete(server, client);
-  registerOrganization(server, client);
-  registerRequisitions(server, client);
-  registerScorecardSubmissions(server, client);
-  registerJobStages(server, client);
-  registerInterviews(server, client);
-  registerTemplates(server, client);
-  registerUsers(server, client);
-  registerRoles(server, client);
-  registerLookups(server, client);
+  registerJobPosts(target, client);
+  registerJobs(target, client);
+  registerApplications(target, client);
+  registerCandidates(target, client);
+  registerWebhooks(target, client);
+  registerAutocomplete(target, client);
+  registerOrganization(target, client);
+  registerRequisitions(target, client);
+  registerScorecardSubmissions(target, client);
+  registerJobStages(target, client);
+  registerInterviews(target, client);
+  registerTemplates(target, client);
+  registerUsers(target, client);
+  registerRoles(target, client);
+  registerLookups(target, client);
 
   return server;
 }
